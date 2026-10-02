@@ -1,11 +1,11 @@
 {
-  "name": "NeuroPilot",
-  "short_name": "NeuroPilot",
+  "name": "NeuroTrain",
+  "short_name": "NeuroTrain",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f6f6f4",
-  "theme_color": "#2a78d6",
+  "theme_color": "#1a8a4a",
   "icons": [
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
     {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
