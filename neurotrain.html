@@ -52,7 +52,7 @@ details summary{cursor:pointer;font-weight:600}
 
 <div class="card" id="conncard">
   <h2>Связь с платой</h2>
-  <div class="muted" id="conntxt">Прошивка neuro_feedback. Включи Bluetooth и нажми кнопку, в списке выбери NeuroTrain.</div>
+  <div class="muted" id="conntxt">Прошивка neuro_feedback. Включи Bluetooth и нажми кнопку. В списке плата может называться NeuroTrain или NeuroPilot (телефон помнит старое имя) — выбирай любую.</div>
   <div class="row" style="margin-top:10px"><button class="primary big" id="bconn">Подключиться к NeuroTrain</button></div>
 </div>
 
@@ -138,7 +138,7 @@ const dec=new TextDecoder(),enc=new TextEncoder();
 function connUi(txt,btn){$('conntxt').textContent=txt;$('bconn').style.display=btn?'':'none';$('conncard').style.display=linked?'none':''}
 async function bleConnect(){
  if(!navigator.bluetooth){connUi('Этот браузер не умеет Bluetooth. Нужен Chrome (Android или компьютер).',false);return}
- try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroTrain'}],optionalServices:[SVC]});dev.addEventListener('gattserverdisconnected',onDisc);await gattUp()}
+ try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroTrain'},{namePrefix:'NeuroPilot'},{services:[SVC]}],optionalServices:[SVC]});dev.addEventListener('gattserverdisconnected',onDisc);await gattUp()}
  catch(e){connUi('Не подключилось: '+e.message,true)}}
 async function gattUp(){connUi('Подключаюсь…',false);const srv=await dev.gatt.connect(),s=await srv.getPrimaryService(SVC);
  chRx=await s.getCharacteristic(RXC);const tx=await s.getCharacteristic(TXC);tx.addEventListener('characteristicvaluechanged',e=>onData(e.target.value));await tx.startNotifications();
@@ -148,6 +148,7 @@ function onDisc(){linked=false;chRx=null;fbTone(false);chips();if(userDisc)retur
 function onData(dv){inbuf+=dec.decode(dv,{stream:true});let i;while((i=inbuf.indexOf('\n'))>=0){const l=inbuf.slice(0,i);inbuf=inbuf.slice(i+1);if(l)onLine(l)}}
 function cmd(c){wq=wq.then(async()=>{if(!chRx)return;try{await chRx.writeValueWithResponse(enc.encode(c))}catch(e){}});return wq}
 function onLine(line){const k=line[0],v=line.slice(1);let j=null;
+ if(k==='H'){logLine('[page] ВНИМАНИЕ: на плате прошивка NeuroPilot, а не neuro_feedback — тренировка не заработает. Залей neuro_feedback.');connUi('На плате прошивка NeuroPilot. Для тренировки залей neuro_feedback.',false);$('conncard').style.display='';return}
  try{if(k!=='L')j=JSON.parse(v)}catch(e){console.log('плохая строка',line);return}
  if(k==='S'){st=j;fw=j.fw;$('fw').textContent=fw;renderState()}
  else if(k==='N')onNew(j);else if(k==='D')onSec(j);else if(k==='B')onBase(j);else if(k==='R')onTrial(j);else if(k==='Y')onSummary(j);
@@ -265,5 +266,5 @@ $('bstate').onclick=()=>cmd('P');
 $('bset').onclick=async()=>{await cmd('TARGET '+$('target').value);await cmd('THR '+$('thr').value);await cmd('HOLD '+$('hold').value);await cmd('TRIALS '+$('trials').value);
  await cmd('EMGK '+$('emgk').value);await cmd('EYEK '+$('eyek').value);await cmd('GUARD '+$('gemg').value+' '+$('geye').value)};
 window.addEventListener('resize',()=>{drawLive();renderHist()});
-connUi('Прошивка neuro_feedback. Включи Bluetooth и нажми кнопку, в списке выбери NeuroTrain.',true);chips();renderHist();drawLive();$('howto').textContent=HOWTO.MED;
+connUi('Прошивка neuro_feedback. Включи Bluetooth и нажми кнопку. В списке плата может называться NeuroTrain или NeuroPilot (телефон помнит старое имя) — выбирай любую.',true);chips();renderHist();drawLive();$('howto').textContent=HOWTO.MED;
 </script></body></html>
