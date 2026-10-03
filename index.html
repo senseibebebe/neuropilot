@@ -108,9 +108,9 @@ const SVC='6e400001-b5a3-f393-e0a9-e50e24dcca9e',RXC='6e400002-b5a3-f393-e0a9-e5
 let dev=null,chRx=null,inbuf='',linked=false,fw='',pairsCache=[],wq=Promise.resolve(),userDisc=false;
 const dec=new TextDecoder(),enc=new TextEncoder();
 function connUi(txt,showBtn){$('conntxt').textContent=txt;$('bconn').style.display=showBtn?'':'none';$('conncard').style.display=linked?'none':''}
-async function bleConnect(){
+async function bleConnect(){userDisc=false;
  if(!navigator.bluetooth){connUi('Этот браузер не умеет Bluetooth. Нужен Chrome на Android (или на компьютере), страница по https.',false);return}
- try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'}],optionalServices:[SVC]});
+ try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'},{namePrefix:'NeuroTrain'},{services:[SVC]}],optionalServices:[SVC]});
   dev.addEventListener('gattserverdisconnected',onDisc);await gattUp()}
  catch(e){connUi('Не подключилось: '+e.message,true)}}
 async function gattUp(){
@@ -126,7 +126,7 @@ function onData(dv){inbuf+=dec.decode(dv,{stream:true});let i;
  while((i=inbuf.indexOf('\n'))>=0){const line=inbuf.slice(0,i);inbuf=inbuf.slice(i+1);if(line)onLine(line)}}
 function onLine(line){const k=line[0],v=line.slice(1);
  try{if(k==='S'){const s=JSON.parse(v);s.fw=fw;s.pairs=pairsCache;render(s)}
-  else if(k==='H'){const h=JSON.parse(v);fw=h.fw;$('fw').textContent=fw}
+  else if(k==='H'){const h=JSON.parse(v);fw=h.fw;$('fw').textContent=fw;if(/^nf/i.test(fw||'')){userDisc=true;linked=false;try{dev.gatt.disconnect()}catch(e){}connUi('На плате прошивка тренировки NeuroTrain ('+fw+'). Для калибровки и управления залей firmware/neuro_pilot.',true);return}}
   else if(k==='P'){pairsCache=JSON.parse(v);if(st){st.pairs=pairsCache;render(st)}}
   else if(k==='L'){const el=$('log');const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-8;
    el.textContent+=v+'\n';if(el.textContent.length>20000)el.textContent=el.textContent.slice(-15000);if(atBottom)el.scrollTop=el.scrollHeight}}
