@@ -83,7 +83,7 @@ label{font-size:13px;color:var(--ink2)}input{font:inherit;width:100%;padding:9px
 <div class="card" id="pairsCard" style="display:none">
   <div style="font-weight:600;margin-bottom:6px">Пары жестов (по последней калибровке)</div>
   <table><thead><tr><th>Пара</th><th class="n">Точн.</th><th class="n">Ложн. движ.</th><th class="n">Ложн. 3-й</th><th></th></tr></thead><tbody id="pairs"></tbody></table>
-  <div class="muted" style="margin-top:6px">Брови + челюсть — приоритет. Зажмуривание — крайний случай: во время команды не видно дрона.</div>
+  <div class="muted" style="margin-top:6px">С v7.6 калибруется только пара брови (ВПЕРЁД) + челюсть (НАЗАД), жесты идут вперемешку; в конце — проверка из 6 жестов.</div>
 </div>
 
 <div class="card">
@@ -198,7 +198,7 @@ function render(s){
  $('calbox').style.display=cal?'':'none';
  if(cal){const tot=s.cal_nsteps+1,done=s.mode==='cal_rest'?0:s.cal_step+1;$('calbar').style.width=(100*done/tot)+'%';
   $('caltxt').textContent=(s.mode==='cal_rest'?'Покой: осталось '+s.rest_left+' с':'Шаг '+(s.cal_step+1)+'/'+s.cal_nsteps+', повтор '+s.cal_rep+'/'+s.cal_reps)+
-   ' · собрано: брови '+s.n[0]+', челюсть '+s.n[1]+', зажмуривание '+s.n[2]+', прочее '+s.n[3]}
+   ' · собрано: брови '+s.n[0]+', челюсть '+s.n[1]+', прочее '+s.n[3]}
  $('prof').innerHTML=s.have_model?`<span>Вперёд</span><b>${NAME[s.takeoff]}</b><span>Назад</span><b>${NAME[s.land]}</b><span>Фон</span><span>${s.base.toFixed(1)} (калибровка ${s.base0.toFixed(1)})</span><span>Толчок</span><span>${s.pulse} мс</span><span>Удержание</span><span>${s.hold} мс</span><span>Порог отказа</span><span>${s.rej.toFixed(2)}</span>`:
    `<span>Профиль</span><b>нет — нажми «Калибровка»</b><span>Фон</span><span>${s.base.toFixed(1)}</span>`;
  if(document.activeElement!==$('pulse'))$('pulse').value=s.pulse;if(document.activeElement!==$('hold'))$('hold').value=s.hold; if(document.activeElement!==$('rej'))$('rej').value=s.rej.toFixed(1);
