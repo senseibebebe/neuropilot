@@ -2,10 +2,10 @@
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>NeuroTrain</title>
+<meta name="theme-color" content="#2a78d6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#2a78d6">
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#141414;--ink2:#5b5b57;--line:#e3e2dd;--blue:#2a78d6;--green:#1a8a4a;--red:#d23b3b;--amber:#c98500;--grey:#9a9993;--chip:#efeee9}
 @media (prefers-color-scheme:dark){:root{--bg:#121212;--card:#1d1d1c;--ink:#f2f2ef;--ink2:#a9a8a1;--line:#33332f;--chip:#2a2a28;--blue:#4a92ea;--green:#35b56b;--red:#ef6161;--amber:#e3a21a;--grey:#6d6c66}}
@@ -26,7 +26,8 @@ button:disabled{opacity:.45;cursor:default}
 label{font-size:12px;color:var(--ink2);display:block;margin-bottom:2px}
 input,select{font:inherit;width:100%;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 #phase{text-align:center;border-radius:14px;padding:16px 10px;transition:background .3s}
-#phase .t{font-size:28px;font-weight:700}#phase .s{font-size:14px;margin-top:2px}
+#phase .t{font-size:28px;font-weight:700}#phase .s{font-size:13px;margin-top:6px;opacity:.85}#phase .task{font-size:16px;margin-top:6px;color:var(--ink);line-height:1.35}
+.mcap{margin-top:12px;font-size:14px;color:var(--ink2);text-align:center}.mcap b{color:var(--ink)}
 #phase.p-idle,#phase.p-done{background:var(--chip);color:var(--ink2)}
 #phase.p-base{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--amber)}
 #phase.p-rest{background:var(--chip);color:var(--ink)}
@@ -60,7 +61,8 @@ details summary{cursor:pointer;font-weight:600}
 </div>
 
 <div class="card">
-  <div id="phase" class="p-idle"><div class="t" id="phT">—</div><div class="s" id="phS">Выбери цель и нажми «Начать сессию»</div></div>
+  <div id="phase" class="p-idle"><div class="t" id="phT">—</div><div class="task" id="phTask"></div><div class="s" id="phS">Выбери цель и нажми «Начать сессию»</div></div>
+  <div class="mcap" id="mcap"></div>
   <div class="meter" id="meter"><i id="mbar"></i><span class="base" id="mbase" style="display:none"></span><span class="thr" id="mthr" style="display:none"></span><b id="mval">—</b></div>
   <div id="why" class="muted"></div>
   <div class="streak" id="streak"></div>
@@ -68,14 +70,14 @@ details summary{cursor:pointer;font-weight:600}
     <button class="primary big" id="bstart">Начать сессию</button>
     <button class="big" id="bfree">Свободная тренировка</button>
     <button class="danger big" id="bstop" style="display:none">Остановить</button>
-    <button id="bsound">Включить звук</button>
+    <button id="bsound" aria-pressed="false">Звук: выкл</button>
   </div>
 </div>
 
 <div class="card">
   <h2>Последние 2 минуты</h2>
   <canvas id="live" height="180"></canvas>
-  <div class="muted" id="liveLegend">Линия — показатель (серые участки — секунды с помехами, не засчитываются). Пунктир — порог. Голубой фон — фаза «Поднимай».</div>
+  <div class="muted" id="liveLegend">Линия — показатель (серые участки — секунды с помехами, не засчитываются). Пунктир — порог. Голубой фон — секунды, когда надо было стараться.</div>
 </div>
 
 <div class="card">
@@ -100,7 +102,7 @@ details summary{cursor:pointer;font-weight:600}
 <div class="card" id="sessCard" style="display:none">
   <h2>Текущая сессия <span class="muted" id="sessId"></span></h2>
   <div class="kv" id="sessKv"></div>
-  <table style="margin-top:10px"><thead><tr><th>Попытка</th><th></th><th class="n">Поднимай</th><th class="n">Отдых</th><th class="n">Разница</th><th class="n">Чистых</th><th class="n">Помехи м/г</th></tr></thead><tbody id="trialsT"></tbody></table>
+  <div style="overflow-x:auto"><table style="margin-top:10px"><thead><tr><th>Попытка</th><th></th><th class="n" id="thUp">Старался</th><th class="n" id="thRest">Ничего не делал</th><th class="n">Разница</th><th class="n">Чистых</th><th class="n">Помехи м/г</th></tr></thead><tbody id="trialsT"></tbody></table></div>
   <div class="row" style="margin-top:10px"><button id="bcsv">Скачать CSV сессии</button></div>
 </div>
 
@@ -108,7 +110,7 @@ details summary{cursor:pointer;font-weight:600}
   <h2>Кривая обучения</h2>
   <div class="row"><label style="margin:0">Цель:</label><select id="histTarget" style="width:auto"></select></div>
   <canvas id="curve" height="200" style="margin-top:8px"></canvas>
-  <div class="muted">Столбики — доля успешных попыток в сессии. Точки и линия — средняя разница «Поднимай − Отдых» (правая шкала, пункты). Растёт разница → учишься управлять.</div>
+  <div class="muted">Столбики — доля успешных попыток в сессии. Точки и линия — средняя разница «когда старался» минус «когда ничего не делал» (правая шкала, пункты). Растёт разница → учишься управлять.</div>
   <table style="margin-top:10px"><thead><tr><th>Дата</th><th>Цель</th><th class="n">Успех</th><th class="n">Разница</th><th class="n">d</th><th class="n">Чистых</th><th></th></tr></thead><tbody id="histT"></tbody></table>
   <div class="row" style="margin-top:10px"><button id="bhcsv">Скачать все итоги (CSV)</button><button class="danger" id="bhclear">Очистить историю</button></div>
   <div class="muted" style="margin-top:6px">История хранится в этом браузере на этом устройстве. Надёжная копия — CSV или tools/nf_logger.py на компьютере.</div>
@@ -121,19 +123,36 @@ details summary{cursor:pointer;font-weight:600}
 const $=id=>document.getElementById(id);
 const sg=v=>v==null||isNaN(v)?'—':(v>=0?'+':'')+(+v).toFixed(1),f2=v=>v==null||isNaN(v)?'—':(+v).toFixed(2);
 const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TASK={
+ MED:{intro:'Сначала 1 минуту просто сиди — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд ничего не делаешь, потом 15 секунд расслабляешься (на экране будет РАССЛАБЬСЯ). Цель: пока расслабляешься, полоса должна уйти за чёрную черту и продержаться там 3 секунды.',past:'Расслаблялся',up:'РАССЛАБЬСЯ',upT:'Медленно выдыхай. Расслабь лоб, челюсть, плечи. Можно закрыть глаза и слушать звук: чем выше тон — тем лучше.',
+  rest:'ОТДЫХ',restT:'Ничего не делай, просто сиди с открытыми глазами. Не старайся.',what:'медитация (MED)',verb:'ещё расслабься'},
+ ATT:{intro:'Сначала 1 минуту просто сиди — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд ничего не делаешь, потом 15 секунд считаешь в уме 100, 93, 86… (на экране будет СОСРЕДОТОЧЬСЯ). Цель: пока считаешь, полоса должна уйти за чёрную черту и продержаться там 3 секунды.',past:'Считал',up:'СОСРЕДОТОЧЬСЯ',upT:'Считай в уме: 100, 93, 86… (каждый раз минус 7). Смотри в одну точку. Не хмурься и не щурься — это не засчитывается.',
+  rest:'ОТДЫХ',restT:'Брось счёт, просто сиди. Не старайся.',what:'внимание (ATT)',verb:'сосредоточься сильнее'},
+ ALPHA:{intro:'Сначала 1 минуту просто сиди с открытыми глазами — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд с открытыми глазами, потом 15 секунд с закрытыми (на экране будет ЗАКРОЙ ГЛАЗА, потом прозвучит сигнал). Цель: с закрытыми глазами полоса должна уйти за чёрную черту и продержаться 3 секунды.',past:'Глаза закрыты',up:'ЗАКРОЙ ГЛАЗА',upT:'Закрой глаза, расслабься, ни о чём не думай. Слушай звук: чем выше тон — тем лучше.',
+  rest:'ОТКРОЙ ГЛАЗА',pastRest:'Глаза открыты',restT:'Открой глаза, смотри в одну точку, просто сиди.',what:'альфа-ритм',verb:'расслабься глубже'},
+ FOCUS:{intro:'Сначала 1 минуту просто сиди — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд ничего не делаешь, потом 15 секунд считаешь в уме 100 минус 7, минус 7… (на экране будет СЧИТАЙ В УМЕ). Цель: пока считаешь, полоса должна уйти за чёрную черту и продержаться 3 секунды.',past:'Считал',up:'СЧИТАЙ В УМЕ',upT:'100 минус 7, минус 7… Держи взгляд на точке, лицо расслаблено (мышцы лба не засчитываются).',
+  rest:'ОТДЫХ',restT:'Брось счёт, просто сиди.',what:'бета/(тета+альфа)',verb:'сосредоточься сильнее'}};
 const TNAME={ATT:'Внимание',MED:'Медитация',ALPHA:'Альфа',FOCUS:'Бета/(тета+альфа)'};
 const HOWTO={
- MED:'Медитация: в фазе «Поднимай» расслабься — медленный выдох, расслабь лоб, челюсть, плечи; можно закрыть глаза и слушать звук (выше тон — выше показатель). В «Отдыхе» просто сиди, ничего не делай.',
- ATT:'Внимание: в «Поднимай» сосредоточься — считай в уме (100 − 7 − 7…), держи взгляд на одной точке, не щурься и не хмурься (мышцы отбраковываются). В «Отдыхе» отпусти задачу.',
+ MED:'Медитация: когда на экране РАССЛАБЬСЯ — расслабься — медленный выдох, расслабь лоб, челюсть, плечи; можно закрыть глаза и слушать звук (выше тон — выше показатель). Когда на экране ОТДЫХ — просто сиди, ничего не делай.',
+ ATT:'Внимание: когда на экране СОСРЕДОТОЧЬСЯ — сосредоточься — считай в уме (100 − 7 − 7…), держи взгляд на одной точке, не щурься и не хмурься (мышцы отбраковываются). Когда на экране ОТДЫХ — брось счёт и просто сиди.',
  ALPHA:'Альфа-ритм: лучше всего поднимается при закрытых глазах и расслаблении. Ориентируйся на звук. 50 — твой фон, 65 — на 1 стандартное отклонение выше фона.',
  FOCUS:'Бета/(тета+альфа): пробуй устный счёт и сосредоточение. Осторожно: мышцы лба тоже поднимают бету — такие секунды отбраковываются.'};
-let audio=null,osc=null,gain=null,st=null,sess=null,live=[],linked=false,fw='';
+let audio=null,osc=null,gain=null,soundOn=false,st=null,sess=null,live=[],linked=false,fw='';
 // ---------------- звук ----------------
-function tone(f,ms,when=0,vol=.22,type='sine'){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;const t=audio.currentTime+when;
+function tone(f,ms,when=0,vol=.22,type='sine'){if(!audio||!soundOn)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;const t=audio.currentTime+when;
  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.linearRampToValueAtTime(0,t+ms/1000);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+ms/1000+.02)}
-function fbTone(on,f){if(!audio)return;if(!osc){osc=audio.createOscillator();gain=audio.createGain();osc.type='sine';gain.gain.value=0;osc.connect(gain).connect(audio.destination);osc.start()}
+function fbTone(on,f){if(!audio)return;if(!soundOn)on=false;if(!osc){osc=audio.createOscillator();gain=audio.createGain();osc.type='sine';gain.gain.value=0;osc.connect(gain).connect(audio.destination);osc.start()}
  const t=audio.currentTime;osc.frequency.setTargetAtTime(f||300,t,.15);gain.gain.setTargetAtTime(on?.10:0,t,.2)}
-$('bsound').onclick=()=>{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume();tone(880,120);$('bsound').textContent='Звук включён'};
+// звук включается и выключается кнопкой; выбор запоминается в этом браузере
+function setSound(on){soundOn=on;
+ if(on){audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume();tone(880,120)}
+ else if(gain&&audio)gain.gain.setTargetAtTime(0,audio.currentTime,.05);
+ const b=$('bsound');b.textContent=on?'Звук: вкл':'Звук: выкл';b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('primary',on);
+ try{localStorage.setItem('neurotrain_sound',on?'1':'0')}catch(e){}}
+$('bsound').onclick=()=>setSound(!soundOn);
+// браузер разрешает звук только после нажатия — включаем при первом нажатии любой кнопки, если пользователь не выключал
+function soundAuto(){let pref='1';try{pref=localStorage.getItem('neurotrain_sound')??'1'}catch(e){}if(pref==='1'&&!soundOn)setSound(true)}
 // ---------------- BLE ----------------
 const SVC='6e400001-b5a3-f393-e0a9-e50e24dcca9e',RXC='6e400002-b5a3-f393-e0a9-e50e24dcca9e',TXC='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
 let dev=null,chRx=null,inbuf='',wq=Promise.resolve(),userDisc=false;
@@ -172,12 +191,13 @@ function onSec(d){if(!sess)sess={meta:{sess:'?',target:st?st.sess_target:'?'},st
 function meter(d){const m=$('meter'),thr=d.thr,base=st?st.base_mean:null;
  if(d.ph==='base'){const v=st&&st.sess_target==='ATT'?d.att:st&&st.sess_target==='MED'?d.med:null;
   $('mbar').style.width=(v!=null?v:0)+'%';$('mval').textContent=v!=null?v:'фон';m.className='meter';$('mthr').style.display='none';$('mbase').style.display='none';
-  $('why').textContent='Собираю фон: сиди спокойно, ничего не старайся';fbTone(false);$('streak').innerHTML='';return}
+  $('why').textContent='Собираю фон: сиди спокойно, ничего не старайся';$('mcap').textContent='';fbTone(false);$('streak').innerHTML='';return}
  const v=d.v<0?null:d.v;$('mbar').style.width=(v!=null?v:0)+'%';$('mval').textContent=v!=null?Math.round(v):'—';
  $('mthr').style.display='';$('mthr').style.left=thr+'%';if(base!=null){$('mbase').style.display='';$('mbase').style.left=base+'%'}
  const dirty=!d.cl,above=d.cl&&v!=null&&v>=thr;m.className='meter'+(dirty?' dirty':above?' above':'');
  $('why').textContent=d.poor>0?'Плохой контакт — прижми электрод':d.em?'Мышцы лица напряжены — эта секунда не засчитывается':d.ey?'Моргание / движение глаз — секунда не засчитывается':
-  d.ph==='rest'?'Отдых: не старайся, просто сиди':above?'Выше порога — держи!':'Ниже порога';
+  d.ph==='rest'?'Отдых: не старайся, просто сиди':above?'За чертой — держи!':'Ниже черты — '+((TASK[st&&st.sess_target]||TASK.MED).verb);
+ $('mcap').innerHTML=`Полоса — твой показатель «${esc((TASK[st&&st.sess_target]||TASK.MED).what)}». Чёрная черта — цель (${Math.round(thr)}), серая — твой обычный уровень.`;
  const active=d.ph==='up'||d.ph==='free',h=st?st.hold:3;
  $('streak').innerHTML=active?Array.from({length:h},(_,i)=>`<span class="${i<(d.st||0)?'on':''}"></span>`).join(''):'';
  fbTone(active&&!dirty&&v!=null,220+v*7)}
@@ -191,7 +211,10 @@ function renderState(){chips();const busy=!['idle','done'].includes(st.mode);
  $('bstart').style.display=busy?'none':'';$('bfree').style.display=busy?'none':'';$('bstop').style.display=busy?'':'none';
  ['target','thr','hold','trials','emgk','eyek','gemg','geye','bset'].forEach(id=>$(id).disabled=busy);
  const ph=$('phase'),left=st.ph_len?Math.max(0,st.ph_len-st.sec):0;
- ph.className='p-'+st.mode;$('phT').textContent=st.mode==='idle'?'Готово к сессии':st.mode_ru;
+ ph.className='p-'+st.mode;const tk=TASK[busy||st.mode==='done'?st.sess_target:st.target]||TASK.MED;
+ $('phT').textContent=st.mode==='idle'?'Готово к сессии':st.mode==='base'?'ЗАМЕР ФОНА':st.mode==='rest'?tk.rest:(st.mode==='up'||st.mode==='free')?tk.up:st.mode_ru;
+ $('phTask').textContent=st.mode==='base'?'Сиди спокойно, глаза открыты, смотри в одну точку. Ничего не делай — плата запоминает твой обычный уровень.':
+  st.mode==='rest'?tk.restT:(st.mode==='up'||st.mode==='free')?tk.upT:st.mode==='idle'?tk.intro:'';
  $('phS').textContent=st.mode==='base'?`осталось ~${left} с`:st.mode==='rest'||st.mode==='up'?`попытка ${st.trial}/${st.trials} · осталось ~${left} с · успехов ${st.succ}`:
   st.mode==='free'?`порог ${st.thr_abs.toFixed(0)} · держи ${st.hold} с подряд`:st.mode==='done'?`успехов ${st.succ} из ${st.done}`:`цель: ${TNAME[st.target]}, порог фон + ${st.thr}σ, удержание ${st.hold} с`;
  const f=(id,v)=>{if(document.activeElement!==$(id))$(id).value=v};
@@ -199,10 +222,11 @@ function renderState(){chips();const busy=!['idle','done'].includes(st.mode);
  $('howto').textContent=HOWTO[$('target').value]||''}
 $('target').onchange=()=>{$('howto').textContent=HOWTO[$('target').value]};
 function renderSess(){if(!sess){$('sessCard').style.display='none';return}$('sessCard').style.display='';
+ const T=TASK[sess.meta.target]||TASK.MED;$('thUp').textContent=T.past;$('thRest').textContent=T.pastRest||'Ничего не делал';
  $('sessId').textContent=`№${sess.meta.sess} · ${TNAME[sess.meta.target]||sess.meta.target}`;
  const s=sess.summary,b=sess.base,tr=sess.trials,ok=tr.filter(t=>t.ok).length;
  const kv=[['Успехов',`${ok} / ${tr.length}`],['Фон',b?`${b.base_mean.toFixed(1)} → порог ${b.thr.toFixed(0)}`:'…'],
-  ['Разница П−О',s?sg(s.diff):'…'],['Размер эффекта d',s?f2(s.d):'…'],['Чистых секунд',s?Math.round(s.clean_up*100)+'%':'…']];
+  ['Насколько выше, когда старался',s?sg(s.diff):'…'],['Сила эффекта (d: 0.2 слабо, 0.5 заметно, 0.8 сильно)',s?f2(s.d):'…'],['Секунд без помех',s?Math.round(s.clean_up*100)+'%':'…']];
  if(b&&b.weak)kv.push(['Фон','МНОГО ПОМЕХ']);
  $('sessKv').innerHTML=kv.map(([k,v])=>`<div><span class="muted">${k}</span><b>${esc(v)}</b></div>`).join('');
  $('trialsT').innerHTML=tr.map(t=>`<tr><td>${t.trial}</td><td>${t.ok?'<span class="tag g">успех</span>':'<span class="tag">нет</span>'}</td><td class="n">${t.up_n?t.up_mean.toFixed(1):'—'}</td><td class="n">${t.rest_n?t.rest_mean.toFixed(1):'—'}</td>`+
@@ -261,9 +285,9 @@ $('bhcsv').onclick=()=>{const h=loadHist().filter(x=>x.summary);const K=['sess',
  dl('nf_summaries.csv','date,'+K.join(',')+'\n'+h.map(x=>x.date+','+K.map(k=>x.summary[k]).join(',')).join('\n')+'\n')};
 $('bhclear').onclick=()=>{if(confirm('Удалить всю историю тренировок из этого браузера? (CSV-файлы не затрагиваются)')){try{localStorage.removeItem(HK)}catch(e){}renderHist()}};
 // ---------------- кнопки ----------------
-$('bconn').onclick=()=>{if(!audio)$('bsound').click();bleConnect()};
-$('bstart').onclick=()=>{if(!audio)$('bsound').click();cmd('NF START '+$('target').value+' '+$('trials').value)};
-$('bfree').onclick=()=>{if(!audio)$('bsound').click();cmd('NF FREE '+$('target').value)};
+$('bconn').onclick=()=>{soundAuto();bleConnect()};
+$('bstart').onclick=()=>{soundAuto();cmd('NF START '+$('target').value+' '+$('trials').value)};
+$('bfree').onclick=()=>{soundAuto();cmd('NF FREE '+$('target').value)};
 $('bstop').onclick=()=>{if(confirm('Остановить сессию? Незаконченная сессия в кривую обучения не попадёт.'))cmd('STOP')};
 $('bstate').onclick=()=>cmd('P');
 $('bset').onclick=async()=>{await cmd('TARGET '+$('target').value);await cmd('THR '+$('thr').value);await cmd('HOLD '+$('hold').value);await cmd('TRIALS '+$('trials').value);

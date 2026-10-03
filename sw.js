@@ -1,5 +1,5 @@
 // NeuroTrain: страница работает без интернета (в поле). При новой версии поменяй VER.
-const VER = 'nt-v1.2';
+const VER = 'nt-v1.6';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VER).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
