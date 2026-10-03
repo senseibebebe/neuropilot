@@ -65,6 +65,17 @@ label{font-size:13px;color:var(--ink2)}input{font:inherit;width:100%;padding:9px
   </div>
 </div>
 
+<div class="card" id="pilotCard">
+  <div style="font-weight:600;margin-bottom:6px">Состояние пилота <span class="muted" style="font-weight:400">— только показ, в управлении не участвует</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+   <div style="background:var(--chip);border-radius:10px;padding:8px"><div class="muted">Внимание (чип)</div><div id="pAtt" style="font-size:26px;font-weight:700;color:var(--blue)">—</div></div>
+   <div style="background:var(--chip);border-radius:10px;padding:8px"><div class="muted">Медитация (чип)</div><div id="pMed" style="font-size:26px;font-weight:700;color:var(--green)">—</div></div>
+  </div>
+  <div class="muted" style="margin-top:6px">За минуту, только чистые секунды: <b id="pAvg">—</b></div>
+  <canvas id="pilot" height="110" style="width:100%;display:block;margin-top:8px"></canvas>
+  <div class="muted" id="pNote">Синяя линия — внимание, зелёная — медитация, 2 минуты. Пока мышцы лица работают (жест) и 3 с после — значения искажены, они серые и в средние не входят.</div>
+</div>
+
 <div class="card">
   <div class="kv" id="prof"></div>
 </div>
@@ -159,8 +170,19 @@ $('bset').onclick=()=>{cmd('PULSE '+$('pulse').value);cmd('HOLD '+$('hold').valu
 document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>cmd('T'+b.dataset.t));
 const NAME={0:'Брови',1:'Челюсть',2:'Зажмуривание'},EN={0:'BROWS',1:'JAW',2:'SQUEEZE'};
 function chip(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
+// ---------- состояние пилота: att/med чипа, 1 раз в секунду; серые = искажены мышцами или плохим контактом ----------
+let pil=[],pilT=0;
+function pilotPush(s){if(s.att==null||s.att<0)return;const now=Date.now();if(now-pilT<900)return;pilT=now;
+ const dirty=s.poor!==0||!s.link||(s.emg_ago!=null&&s.emg_ago<3000);pil.push({a:s.att,m:s.med,d:dirty});if(pil.length>120)pil.shift();
+ $('pAtt').textContent=s.att;$('pMed').textContent=s.med;$('pAtt').style.opacity=$('pMed').style.opacity=dirty?.4:1;
+ const last=pil.slice(-60).filter(x=>!x.d);$('pAvg').textContent=last.length>=10?`внимание ${Math.round(last.reduce((t,x)=>t+x.a,0)/last.length)} · медитация ${Math.round(last.reduce((t,x)=>t+x.m,0)/last.length)} (${last.length} с)`:'мало чистых секунд';
+ drawPilot()}
+function drawPilot(){const c=$('pilot'),r=window.devicePixelRatio||1,w=c.clientWidth,h=110;c.width=w*r;c.height=h*r;const x=c.getContext('2d');x.setTransform(r,0,0,r,0,0);
+ const cs=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim(),X=i=>w*(i+120-pil.length)/119,Y=v=>4+(h-8)*(1-v/100);
+ x.strokeStyle=cs('--line');x.lineWidth=1;[0,50,100].forEach(v=>{x.beginPath();x.moveTo(0,Y(v));x.lineTo(w,Y(v));x.stroke()});
+ [['a','--blue'],['m','--green']].forEach(([k,col])=>{x.lineWidth=2;for(let i=1;i<pil.length;i++){x.strokeStyle=pil[i].d?cs('--line'):cs(col);x.beginPath();x.moveTo(X(i-1),Y(pil[i-1][k]));x.lineTo(X(i),Y(pil[i][k]));x.stroke()}})}
 function render(s){
- st=s;armed=s.armed;$('barm').textContent=armed?'Запретить команды':'Разрешить команды';
+ st=s;pilotPush(s);armed=s.armed;$('barm').textContent=armed?'Запретить команды':'Разрешить команды';
  $('chips').innerHTML=chip('Плата: на связи','ok')+chip(s.link?'Гарнитура: данные идут':'Гарнитура: нет данных',s.link?'ok':'bad')+
   chip(s.poor>=200?'Контакт: нет':s.poor>0?'Контакт: '+s.poor:'Контакт: OK',s.poor>=200?'bad':s.poor>0?'warn':'ok')+
   chip('Режим: '+s.mode_ru,s.mode==='control'?'ok':s.mode==='cal_fail'?'bad':'warn')+
