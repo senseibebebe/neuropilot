@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NeuroPilot</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<meta name="theme-color" content="#2a78d6">
+<style>
+:root{--bg:#f6f6f4;--card:#fff;--ink:#141414;--ink2:#5b5b57;--line:#e3e2dd;--blue:#2a78d6;--green:#1a8a4a;--red:#d23b3b;--amber:#c98500;--violet:#4a3aa7;--chip:#efeee9}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--card:#1d1d1c;--ink:#f2f2ef;--ink2:#a9a8a1;--line:#33332f;--chip:#2a2a28;--blue:#4a92ea;--green:#35b56b;--red:#ef6161;--amber:#e3a21a;--violet:#9085e9}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:18px;margin:4px 0 10px;display:flex;justify-content:space-between;align-items:center}
+h1 small{font-weight:400;color:var(--ink2);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:var(--chip);border-radius:99px;padding:4px 10px;font-size:13px;display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ink2)}.ok .dot{background:var(--green)}.bad .dot{background:var(--red)}.warn .dot{background:var(--amber)}
+#cue{font-size:26px;font-weight:700;text-align:center;padding:22px 10px;border-radius:14px;min-height:96px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+#cue.k-cue{background:color-mix(in srgb,var(--blue) 18%,var(--card));color:var(--blue)}
+#cue.k-ok,#cue.k-takeoff{background:color-mix(in srgb,var(--green) 18%,var(--card));color:var(--green)}
+#cue.k-fail,#cue.k-safe{background:color-mix(in srgb,var(--red) 18%,var(--card));color:var(--red)}
+#cue.k-land{background:color-mix(in srgb,var(--amber) 20%,var(--card));color:var(--amber)}
+#cue.k-idle{background:var(--chip);color:var(--ink2);font-size:18px;font-weight:500}
+#cue{flex-direction:column;gap:4px}#cue small{display:block;font-size:15px;font-weight:500;opacity:.9}
+#cue.k-ready{background:var(--chip);color:var(--ink);font-size:22px}
+#cue.k-now{background:#d61f1f;color:#fff;font-size:34px;transition:none}
+#cue.k-got{background:#1a8a4a;color:#fff;font-size:30px;transition:none}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer;min-height:44px}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+button.danger{color:var(--red)}button:active{transform:scale(.98)}
+.big{flex:1 1 100%;font-size:17px}
+.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;margin:8px 0 4px}.bar i{display:block;height:100%;background:var(--blue);width:0;transition:width .3s}
+.muted{color:var(--ink2);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--ink2);font-weight:500;font-size:12px}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--chip);color:var(--ink2)}.tag.g{color:var(--green)}.tag.r{color:var(--red)}
+#log{font:12px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--chip);border-radius:10px;padding:8px;margin:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+label{font-size:13px;color:var(--ink2)}input{font:inherit;width:100%;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}.kv b{font-weight:600}
+</style></head><body><main>
+<h1>NeuroPilot <small id="fw"></small></h1>
+<div class="chips" id="chips"></div>
+<div class="card" id="conncard">
+  <div style="font-weight:600;margin-bottom:6px">Связь с платой</div>
+  <div class="muted" id="conntxt">Включи Bluetooth на телефоне и нажми кнопку. В списке выбери NeuroPilot.</div>
+  <div class="row" style="margin-top:10px"><button class="primary big" id="bconn">Подключиться к NeuroPilot</button></div>
+</div>
+
+<div class="card">
+  <div id="cue" class="k-idle">Подключение…</div>
+  <div id="calbox" style="display:none">
+    <div class="bar"><i id="calbar"></i></div>
+    <div class="muted" id="caltxt"></div>
+  </div>
+  <div class="muted" id="owner" style="margin-top:6px"></div>
+  <div class="row" style="margin-top:12px">
+    <button class="primary big" id="bcal">Калибровка</button>
+    <button class="danger big" id="bstop" style="display:none">Остановить калибровку</button>
+    <button id="bsound">Включить звук</button>
+    <button id="barm">Запретить команды</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="kv" id="prof"></div>
+</div>
+
+<div class="card" id="pairsCard" style="display:none">
+  <div style="font-weight:600;margin-bottom:6px">Пары жестов (по последней калибровке)</div>
+  <table><thead><tr><th>Пара</th><th class="n">Точн.</th><th class="n">Ложн. движ.</th><th class="n">Ложн. 3-й</th><th></th></tr></thead><tbody id="pairs"></tbody></table>
+  <div class="muted" style="margin-top:6px">Брови + челюсть — приоритет. Зажмуривание — крайний случай: во время команды не видно дрона.</div>
+</div>
+
+<div class="card">
+  <div style="font-weight:600;margin-bottom:8px">Настройки</div>
+  <div class="grid2">
+    <div><label>Толчок вперёд/назад, мс</label><input id="pulse" type="number" min="200" max="5000" step="100"></div>
+    <div><label>Удержание жеста, мс</label><input id="hold" type="number" min="0" max="600" step="50"></div>
+    <div><label>Порог отказа (меньше — строже)</label><input id="rej" type="number" min="0.5" max="4" step="0.1"></div>
+  </div>
+  <div class="row" style="margin-top:8px"><button id="bset">Сохранить</button></div>
+  <div style="font-weight:600;margin:14px 0 8px">Проверка пульта (CH7)</div>
+  <div class="row"><button data-t="1000">1000 назад</button><button data-t="1500">1500 центр</button><button data-t="2000">2000 вперёд</button></div>
+  <div class="row" style="margin-top:14px"><button class="danger" id="bforget">Стереть профиль</button><button id="bwifi">Отключиться</button></div>
+</div>
+
+<div class="card"><div style="font-weight:600;margin-bottom:6px">Журнал</div><pre id="log"></pre></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let audio=null,lastCue=-1,logSeq=0,st=null,armed=true;
+function tone(f,ms,when=0,type='sine',vol=.25){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;
+ const t=audio.currentTime+when;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.linearRampToValueAtTime(0,t+ms/1000);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+ms/1000+.02)}
+function play(kind,text){
+ if(kind==='cue'){const n=/БРОВИ/.test(text)?1:/ЗУБЫ|ЧЕЛЮСТ/.test(text)?2:/ЗАЖМУР/.test(text)?3:1;for(let i=0;i<n;i++)tone(1400,110,i*.18);if(navigator.vibrate)navigator.vibrate(Array(n).fill(0).flatMap(()=>[90,80]))}
+ else if(kind==='ok'){[880,1175,1568].forEach((f,i)=>tone(f,140,i*.15))}
+ else if(kind==='takeoff'){tone(1760,150);if(navigator.vibrate)navigator.vibrate(150)}
+ else if(kind==='land'){tone(520,300);if(navigator.vibrate)navigator.vibrate([300])}
+ else if(kind==='fail'||kind==='safe'){tone(220,500,0,'square',.15);tone(180,500,.55,'square',.15);if(navigator.vibrate)navigator.vibrate([500,200,500])}
+ else if(kind==='rest'){tone(440,600)}}
+$('bsound').onclick=()=>{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume();tone(1000,120);$('bsound').textContent='Звук включён'};
+// --- связь с платой по Bluetooth LE (сервис Nordic UART) ---
+const SVC='6e400001-b5a3-f393-e0a9-e50e24dcca9e',RXC='6e400002-b5a3-f393-e0a9-e50e24dcca9e',TXC='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+let dev=null,chRx=null,inbuf='',linked=false,fw='',pairsCache=[],wq=Promise.resolve(),userDisc=false;
+const dec=new TextDecoder(),enc=new TextEncoder();
+function connUi(txt,showBtn){$('conntxt').textContent=txt;$('bconn').style.display=showBtn?'':'none';$('conncard').style.display=linked?'none':''}
+async function bleConnect(){
+ if(!navigator.bluetooth){connUi('Этот браузер не умеет Bluetooth. Нужен Chrome на Android (или на компьютере), страница по https.',false);return}
+ try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'}],optionalServices:[SVC]});
+  dev.addEventListener('gattserverdisconnected',onDisc);await gattUp()}
+ catch(e){connUi('Не подключилось: '+e.message,true)}}
+async function gattUp(){
+ connUi('Подключаюсь…',false);
+ const srv=await dev.gatt.connect(),s=await srv.getPrimaryService(SVC);
+ chRx=await s.getCharacteristic(RXC);const tx=await s.getCharacteristic(TXC);
+ tx.addEventListener('characteristicvaluechanged',e=>onData(e.target.value));await tx.startNotifications();
+ inbuf='';linked=true;connUi('',false)}
+function onDisc(){linked=false;chRx=null;$('chips').innerHTML=chip('Плата: нет связи','bad');
+ if(userDisc)return;connUi('Связь с платой потеряна — переподключаюсь…',true);
+ setTimeout(async()=>{if(linked||!dev)return;try{await gattUp()}catch(e){onDisc()}},2000)}
+function onData(dv){inbuf+=dec.decode(dv,{stream:true});let i;
+ while((i=inbuf.indexOf('\n'))>=0){const line=inbuf.slice(0,i);inbuf=inbuf.slice(i+1);if(line)onLine(line)}}
+function onLine(line){const k=line[0],v=line.slice(1);
+ try{if(k==='S'){const s=JSON.parse(v);s.fw=fw;s.pairs=pairsCache;render(s)}
+  else if(k==='H'){const h=JSON.parse(v);fw=h.fw;$('fw').textContent=fw}
+  else if(k==='P'){pairsCache=JSON.parse(v);if(st){st.pairs=pairsCache;render(st)}}
+  else if(k==='L'){const el=$('log');const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-8;
+   el.textContent+=v+'\n';if(el.textContent.length>20000)el.textContent=el.textContent.slice(-15000);if(atBottom)el.scrollTop=el.scrollHeight}}
+ catch(e){console.log('плохая строка',line)}}
+function cmd(c){wq=wq.then(async()=>{if(!chRx)return;try{await chRx.writeValueWithResponse(enc.encode(c))}catch(e){}});return wq}
+$('bconn').onclick=()=>{if(!audio)$('bsound').click();bleConnect()};
+$('bcal').onclick=()=>{if(!audio)$('bsound').click();cmd('CAL')};
+$('bstop').onclick=()=>{if(confirm('Остановить калибровку? Вернётся прежний профиль (если он был).'))cmd('STOP')};
+// --- сигнал калибровки: страница знает заранее, когда он будет, и сама включает красный экран точно в момент ---
+const esc=x=>String(x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let cueT=null,cueEnd=0,cueAt=0,cuePrompt='',cueGot=false;
+function cueDraw(){const c=$('cue'),now=performance.now();
+ if(cueEnd>now){c.className=cueGot?'k-got':'k-now';c.innerHTML=(cueGot?'ПРИНЯТО':'СЕЙЧАС!')+'<small>'+esc(cuePrompt)+'</small>'}
+ else{c.className='k-ready';c.innerHTML='Приготовься<small>'+esc(cuePrompt)+'<br>делай, когда экран станет КРАСНЫМ</small>'}}
+function cueFire(end){cueEnd=end;cueGot=false;cueDraw();tone(1400,160);if(navigator.vibrate)navigator.vibrate(250);
+ setTimeout(cueDraw,Math.max(0,end-performance.now())+30)}
+function cueSync(s){
+ if(s.mode!=='cal_step'){clearTimeout(cueT);cueT=null;cueEnd=0;cueAt=0;return false}
+ const now=performance.now();cuePrompt=s.prompt||'';
+ if(s.cue_open_ms>=0){const end=now-s.cue_open_ms+s.win;
+  if(cueEnd>now)cueEnd=end;else if(s.cue_open_ms<s.win){clearTimeout(cueT);cueT=null;cueAt=0;cueFire(end)}
+  if(s.cue_got)cueGot=true}
+ else if(s.cue_in>=0){const at=now+s.cue_in;
+  if(!cueT||Math.abs(at-cueAt)>200){clearTimeout(cueT);cueAt=at;cueT=setTimeout(()=>{cueT=null;cueAt=0;cueFire(performance.now()+s.win)},s.cue_in)}}
+ cueDraw();return true}
+$('barm').onclick=()=>cmd(armed?'DISARM':'ARM');
+$('bforget').onclick=()=>{if(confirm('Стереть сохранённый профиль пилота?'))cmd('FORGET')};
+$('bwifi').onclick=()=>{userDisc=true;if(dev&&dev.gatt.connected)dev.gatt.disconnect();linked=false;connUi('Отключено. Нажми, чтобы подключиться снова.',true);userDisc=false};
+$('bset').onclick=()=>{cmd('PULSE '+$('pulse').value);cmd('HOLD '+$('hold').value);cmd('REJ '+$('rej').value)};
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>cmd('T'+b.dataset.t));
+const NAME={0:'Брови',1:'Челюсть',2:'Зажмуривание'},EN={0:'BROWS',1:'JAW',2:'SQUEEZE'};
+function chip(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
+function render(s){
+ st=s;armed=s.armed;$('barm').textContent=armed?'Запретить команды':'Разрешить команды';
+ $('chips').innerHTML=chip('Плата: на связи','ok')+chip(s.link?'Гарнитура: данные идут':'Гарнитура: нет данных',s.link?'ok':'bad')+
+  chip(s.poor>=200?'Контакт: нет':s.poor>0?'Контакт: '+s.poor:'Контакт: OK',s.poor>=200?'bad':s.poor>0?'warn':'ok')+
+  chip('Режим: '+s.mode_ru,s.mode==='control'?'ok':s.mode==='cal_fail'?'bad':'warn')+
+  chip('CH7 '+s.ch7,s.ch7==2000?'ok':s.ch7==1000?'warn':'')+(s.blocked?chip('Блокировка','bad'):'')+(s.failsafe?chip('FAILSAFE','bad'):'');
+ const cue=$('cue');
+ const calStep=s.mode==='cal_step';
+ // во время шагов калибровки звук подсказки играет страница сама, точно по времени (см. cueSync)
+ if(s.cue_seq!==lastCue){ if(lastCue!==-1&&s.cue_text&&!(calStep&&s.cue_kind==='cue'))play(s.cue_kind,s.cue_text); lastCue=s.cue_seq;}
+ if(!cueSync(s)){cue.className='k-'+(s.cue_text?s.cue_kind:'idle');cue.textContent=s.cue_text||'—'}
+ const cal=s.mode==='cal_rest'||s.mode==='cal_step'||s.mode==='cal_pause';
+ $('bcal').style.display=(cal||s.owner)?'none':'';$('bstop').style.display=(cal||s.owner)?'':'none';
+ $('owner').textContent=s.owner==1?'Калибровку запустили с компьютера: здесь только просмотр и «Остановить».':s.owner==2?'Калибровка идёт со страницы — консоль на компьютере отключена до её окончания.':'';
+ $('calbox').style.display=cal?'':'none';
+ if(cal){const tot=s.cal_nsteps+1,done=s.mode==='cal_rest'?0:s.cal_step+1;$('calbar').style.width=(100*done/tot)+'%';
+  $('caltxt').textContent=(s.mode==='cal_rest'?'Покой: осталось '+s.rest_left+' с':'Шаг '+(s.cal_step+1)+'/'+s.cal_nsteps+', повтор '+s.cal_rep+'/'+s.cal_reps)+
+   ' · собрано: брови '+s.n[0]+', челюсть '+s.n[1]+', зажмуривание '+s.n[2]+', прочее '+s.n[3]}
+ $('prof').innerHTML=s.have_model?`<span>Вперёд</span><b>${NAME[s.takeoff]}</b><span>Назад</span><b>${NAME[s.land]}</b><span>Фон</span><span>${s.base.toFixed(1)} (калибровка ${s.base0.toFixed(1)})</span><span>Толчок</span><span>${s.pulse} мс</span><span>Удержание</span><span>${s.hold} мс</span><span>Порог отказа</span><span>${s.rej.toFixed(2)}</span>`:
+   `<span>Профиль</span><b>нет — нажми «Калибровка»</b><span>Фон</span><span>${s.base.toFixed(1)}</span>`;
+ if(document.activeElement!==$('pulse'))$('pulse').value=s.pulse;if(document.activeElement!==$('hold'))$('hold').value=s.hold; if(document.activeElement!==$('rej'))$('rej').value=s.rej.toFixed(1);
+ if(s.pairs&&s.pairs.length){$('pairsCard').style.display='';
+  $('pairs').innerHTML=s.pairs.map(p=>{const cur=s.have_model&&((p.a==s.takeoff&&p.b==s.land)||(p.b==s.takeoff&&p.a==s.land));
+   return `<tr><td>${NAME[p.a]} + ${NAME[p.b]} ${p.a!=2&&p.b!=2?'<span class="tag">приоритет</span>':''}</td>`+
+   (p.valid?`<td class="n">${Math.round(p.acc*100)}%</td><td class="n">${Math.round(p.fpn*100)}%</td><td class="n">${Math.round(p.fpc*100)}%</td>`:'<td colspan=3 class="muted">жест не обнаружен</td>')+
+   `<td>${cur?'<span class="tag g">выбрана</span>':p.valid?`<button onclick="cmd('PAIR ${EN[p.a]} ${EN[p.b]}')">Выбрать</button>`:''}${p.valid&&!p.ok?' <span class="tag r">слабая</span>':''}</td></tr>`}).join('')}
+ else $('pairsCard').style.display='none';
+}
+connUi('Включи Bluetooth на телефоне и нажми кнопку. В списке выбери NeuroPilot.',true);
+</script><script>
+// офлайн-режим: страница сохраняется в телефоне после первого открытия
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body></html>
