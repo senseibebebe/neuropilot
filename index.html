@@ -91,7 +91,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
 <div class="card" id="conncard">
   <h2>Связь с платой</h2>
   <div class="muted" id="conntxt"></div>
-  <div class="row" style="margin-top:10px"><button class="primary big" id="bconn" style="flex:1 1 100%;font-size:17px">Подключиться к плате</button></div>
+  <div class="row" style="margin-top:10px"><button class="primary big" id="breconn" style="flex:1 1 100%;font-size:17px;display:none">Переподключиться</button><button class="big" id="bconn" style="flex:1 1 100%;font-size:17px">Подключиться к плате</button></div>
 </div>
 
 <nav class="tabs" id="tabs">
@@ -140,7 +140,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
   <div class="row" style="margin-top:8px"><button id="e-bset">Сохранить</button></div>
   <div style="font-weight:600;margin:14px 0 8px">Проверка пульта (CH7)</div>
   <div class="row"><button data-t="1000">1000 назад</button><button data-t="1500">1500 центр</button><button data-t="2000">2000 вперёд</button></div>
-  <div class="row" style="margin-top:14px"><button class="danger" id="e-bforget">Стереть профиль</button><button id="e-bwifi">Отключиться</button></div>
+  <div class="row" style="margin-top:14px"><button class="danger" id="e-bforget">Стереть профиль</button><button onclick="forceReconnect()">Переподключить</button><button id="e-bwifi">Отключиться</button></div>
 </div>
 
 <div class="card"><div style="font-weight:600;margin-bottom:6px">Журнал платы</div><pre class="log" id="e-log"></pre></div>
@@ -220,40 +220,60 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
   <div class="muted" style="margin-top:6px">История хранится в этом браузере на этом устройстве. Надёжная копия — CSV или tools/nf_logger.py на компьютере.</div>
 </div>
 
-<div class="card"><h2>Журнал платы</h2><pre class="log" id="t-log"></pre><div class="row" style="margin-top:8px"><button id="t-bstate">Состояние (P)</button><button id="t-bdisc">Отключиться</button></div></div>
+<div class="card"><h2>Журнал платы</h2><pre class="log" id="t-log"></pre><div class="row" style="margin-top:8px"><button id="t-bstate">Состояние (P)</button><button onclick="forceReconnect()">Переподключить</button><button id="t-bdisc">Отключиться</button></div></div>
 <div class="tip" id="t-tip"></div>
 </section>
 </main>
 <script>
 // ===================== общая часть: связь с платой по BLE (Nordic UART) и вкладки =====================
 const SVC='6e400001-b5a3-f393-e0a9-e50e24dcca9e',RXC='6e400002-b5a3-f393-e0a9-e50e24dcca9e',TXC='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BLE={dev:null,chRx:null,inbuf:'',wq:Promise.resolve(),userDisc:false,linked:false,kind:null,autoTab:false,pend:[]};
+const BLE={dev:null,chRx:null,inbuf:'',wq:Promise.resolve(),manualOff:false,busy:false,retry:0,tok:0,lastRx:0,linked:false,kind:null,autoTab:false,pend:[]};
 const g$=id=>document.getElementById(id);
 const bdec=new TextDecoder(),benc=new TextEncoder();
 const KIND_NAME={np:'neuro_pilot (ЭМГ: жесты → пульт)',nf:'neuro_feedback (ЭЭГ-тренировка)'};
 const CONN_HINT='Включи Bluetooth на телефоне и нажми кнопку. В списке выбери NeuroPilot или NeuroTrain (телефон может помнить старое имя — выбирай любую). Страница сама поймёт, какая прошивка залита: вкладки ЭМГ работают с neuro_pilot, ЭЭГ — с neuro_feedback.';
-function connUi(txt,btn){g$('conntxt').textContent=txt;g$('bconn').style.display=btn?'':'none';g$('conncard').style.display=BLE.linked?'none':''}
-function cmd(c){BLE.wq=BLE.wq.then(async()=>{if(!BLE.chRx)return;try{await BLE.chRx.writeValueWithResponse(benc.encode(c))}catch(e){}});return BLE.wq}
+function connUi(txt,btn){g$('conntxt').textContent=txt;g$('bconn').style.display=btn?'':'none';g$('breconn').style.display=btn&&BLE.dev?'':'none';
+ g$('bconn').textContent=BLE.dev?'Выбрать плату заново':'Подключиться к плате';g$('conncard').style.display=BLE.linked?'none':''}
+function cmd(c){BLE.wq=BLE.wq.then(async()=>{if(!BLE.chRx)return;try{await withTimeout(BLE.chRx.writeValueWithResponse(benc.encode(c)),5000,'запись')}catch(e){}});return BLE.wq}
+const withTimeout=(p,ms,what)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(what+': нет ответа '+Math.round(ms/1000)+' с')),ms))]);
+// ---- подключение: одна попытка за раз, повторы с нарастающей паузой, без конца, пока не нажали «Отключиться» ----
 async function bleConnect(){
  if(!navigator.bluetooth){connUi('Этот браузер не умеет Bluetooth. Нужен Chrome на Android (или на компьютере), страница по https.',false);return}
- try{BLE.dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'},{namePrefix:'NeuroTrain'},{services:[SVC]}],optionalServices:[SVC]});
-  BLE.dev.addEventListener('gattserverdisconnected',bleOnDisc);BLE.userDisc=true;
-  try{for(let i=1;;i++){try{await gattUp();break}catch(e){try{BLE.dev.gatt.disconnect()}catch(_){}if(i>=5)throw e;
-   connUi('Не подключилось ('+e.message+'), попытка '+(i+1)+' из 5… Плата может быть занята поиском гарнитуры.',false);await new Promise(r=>setTimeout(r,3000))}}}
-  finally{BLE.userDisc=false}}
- catch(e){connUi('Не подключилось: '+e.message,true)}}
-async function gattUp(){connUi('Подключаюсь…',false);const srv=await BLE.dev.gatt.connect(),s=await srv.getPrimaryService(SVC);
- BLE.chRx=await s.getCharacteristic(RXC);const tx=await s.getCharacteristic(TXC);
- tx.addEventListener('characteristicvaluechanged',e=>bleOnData(e.target.value));await tx.startNotifications();
+ let dev;try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'},{namePrefix:'NeuroTrain'},{services:[SVC]}],optionalServices:[SVC]})}
+ catch(e){connUi(BLE.dev?'Плата не выбрана.':'Не подключилось: '+e.message,true);return}
+ if(BLE.dev!==dev){if(BLE.dev){BLE.dev.removeEventListener('gattserverdisconnected',bleOnDisc);try{BLE.dev.gatt.disconnect()}catch(_){}}BLE.dev=dev;dev.addEventListener('gattserverdisconnected',bleOnDisc);BLE.linked=false}
+ BLE.manualOff=false;BLE.retry=0;reconnectNow('Подключаюсь…')}
+function reconnectNow(txt){if(BLE.linked||!BLE.dev)return;BLE.manualOff=false;connUi(txt||'Подключаюсь…',false);clearTimeout(BLE.retryT);attempt()}
+async function attempt(){
+ if(BLE.linked||BLE.busy||!BLE.dev||BLE.manualOff)return;BLE.busy=true;clearTimeout(BLE.retryT);const tok=BLE.tok=(BLE.tok||0)+1;
+ try{await withTimeout(gattUp(tok),15000,'подключение');BLE.retry=0}
+ catch(e){if(tok===BLE.tok){try{BLE.dev.gatt.disconnect()}catch(_){}BLE.retry=(BLE.retry||0)+1;const d=Math.min(15000,1500*2**Math.min(BLE.retry,4));
+  connUi(`Не подключилось (${e.message}). Пробую снова через ${Math.round(d/1000)} с — попытка ${BLE.retry + 1}. Плата может быть занята гарнитурой; если долго не выходит — выключи и включи плату.`,true);
+  BLE.retryT=setTimeout(attempt,d)}}
+ finally{BLE.busy=false}}
+function onTx(e){bleOnData(e.target.value)}
+async function gattUp(tok){connUi(BLE.retry?'Переподключаюсь…':'Подключаюсь…',false);const srv=await BLE.dev.gatt.connect(),s=await srv.getPrimaryService(SVC);
+ const rx=await s.getCharacteristic(RXC),tx=await s.getCharacteristic(TXC);
+ tx.removeEventListener('characteristicvaluechanged',onTx);tx.addEventListener('characteristicvaluechanged',onTx);await tx.startNotifications();   // один обработчик, без удвоения строк
+ if(tok!==BLE.tok)throw new Error('устаревшая попытка');
+ BLE.chRx=rx;BLE.lastRx=Date.now();
  BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.modeMsg='';BLE.pend=[];BLE.autoTab=true;BLE.linked=true;g$('fw').textContent='';connUi('',false);tabsUi();
  setTimeout(()=>{if(BLE.linked&&!BLE.modes)cmd('P')},2500);   // приветствие H могло прийти раньше подписки и потеряться — версия будет в ответе на P
- setTimeout(()=>{if(BLE.linked&&!BLE.kind){const p=BLE.pend.splice(0);p.forEach(l=>{EMG.onLine(l);EEG.onLine(l)})}},6000)}   // старые прошивки шлют заголовок только при подключении — на всякий случай попросим состояние
-function bleOnDisc(){BLE.linked=false;BLE.chRx=null;g$('chips').innerHTML=chip0('Плата: нет связи','bad');EEG.onDisc();tabsUi();
- if(BLE.userDisc)return;connUi(BLE.switching?'Плата перезагружается в новый режим — переподключаюсь сама, это ~10 с…':'Связь с платой потеряна — переподключаюсь…',true);
- setTimeout(async()=>{if(BLE.linked||!BLE.dev)return;try{await gattUp()}catch(e){bleOnDisc()}},2000)}
-function bleDisconnect(){BLE.userDisc=true;if(BLE.dev&&BLE.dev.gatt.connected)BLE.dev.gatt.disconnect();BLE.linked=false;BLE.chRx=null;
- connUi('Отключено. Нажми, чтобы подключиться снова.',true);EEG.onDisc();g$('chips').innerHTML=chip0('Плата: отключена','');tabsUi();BLE.userDisc=false}
-function bleOnData(dv){BLE.inbuf+=bdec.decode(dv,{stream:true});let i;
+ setTimeout(()=>{if(BLE.linked&&!BLE.kind){const p=BLE.pend.splice(0);p.forEach(l=>{EMG.onLine(l);EEG.onLine(l)})}},6000)}
+function bleOnDisc(){BLE.linked=false;BLE.chRx=null;EEG.onDisc();g$('chips').innerHTML=chip0(BLE.manualOff?'Плата: отключена':'Плата: нет связи',BLE.manualOff?'':'bad');tabsUi();
+ if(BLE.manualOff){connUi('Отключено. «Переподключиться» — к той же плате, без выбора из списка.',true);return}
+ connUi(BLE.switching?'Плата переключает режим — переподключаюсь…':'Связь с платой потеряна — переподключаюсь сама. Можно нажать «Переподключиться».',true);
+ clearTimeout(BLE.retryT);BLE.retryT=setTimeout(attempt,1500)}
+function bleDisconnect(){BLE.manualOff=true;clearTimeout(BLE.retryT);BLE.tok=(BLE.tok||0)+1;try{if(BLE.dev&&BLE.dev.gatt.connected)BLE.dev.gatt.disconnect()}catch(e){}
+ BLE.linked=false;bleOnDisc()}
+// принудительно: закрыть и подключиться заново (кнопка «Переподключить», зависшая связь)
+function forceReconnect(why){if(!BLE.dev){bleConnect();return}BLE.manualOff=false;BLE.tok=(BLE.tok||0)+1;try{BLE.dev.gatt.disconnect()}catch(e){}
+ BLE.linked=false;BLE.chRx=null;BLE.busy=false;clearTimeout(BLE.retryT);connUi(why||'Переподключаюсь…',false);BLE.retryT=setTimeout(attempt,800)}
+// вкладка снова на экране — сразу пробуем, не дожидаясь паузы (в фоне Chrome сильно замедляет таймеры)
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&BLE.dev&&!BLE.linked&&!BLE.manualOff){BLE.retry=0;clearTimeout(BLE.retryT);attempt()}});
+// плата молчит 25 с при «живой» связи — связь мёртвая, переподключаемся (плата шлёт состояние каждые 1–2 с)
+setInterval(()=>{if(BLE.linked&&document.visibilityState==='visible'&&Date.now()-BLE.lastRx>25000)forceReconnect('Плата 25 с не присылает данных — переподключаюсь…')},3000);
+function bleOnData(dv){BLE.lastRx=Date.now();BLE.inbuf+=bdec.decode(dv,{stream:true});let i;
  while((i=BLE.inbuf.indexOf('\n'))>=0){const l=BLE.inbuf.slice(0,i).replace(/\r$/,'');BLE.inbuf=BLE.inbuf.slice(i+1);if(l)route(l)}}
 // какая прошивка на плате: neuro_pilot шлёт H{...} и S с полем ch7; neuro_feedback шлёт S с fw "nf …"
 function route(line){const k=line[0];
@@ -291,8 +311,8 @@ function switchMode(side){if(!BLE.linked)return;BLE.switching=true;cmd('MODE '+(
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function chip0(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
 g$('bconn').onclick=()=>{EMG.gesture();EEG.gesture();bleConnect()};
-// «я жив» для общей прошивки: плата закрывает подключение, если страница пропала (иначе мёртвое подключение запирает плату)
-setInterval(()=>{if(BLE.linked&&BLE.modes)cmd('PING')},5000);
+g$('breconn').onclick=()=>{EMG.gesture();EEG.gesture();BLE.retry=0;reconnectNow('Переподключаюсь…')};
+// PING больше не шлём: в фоновой вкладке Chrome шлёт его раз в минуту, и плата v1.5 закрывала живую связь (06.10)
 </script>
 <script>
 // ===================== ЭМГ: страница калибровки и управления (прошивка neuro_pilot) =====================
