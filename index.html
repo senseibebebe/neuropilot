@@ -12,6 +12,7 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 main{max-width:720px;margin:0 auto;padding:12px 16px 40px}
 h1{font-size:18px;margin:4px 0 10px;display:flex;justify-content:space-between;align-items:center}h1 small{font-weight:400;color:var(--ink2);font-size:12px}
+h1 .pick{font-size:13px;font-weight:500;min-height:36px;padding:6px 12px;flex:none}
 h2{font-size:15px;margin:0 0 8px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:var(--chip);border-radius:99px;padding:4px 10px;font-size:13px;display:flex;align-items:center;gap:6px}
@@ -86,7 +87,7 @@ section.mm>.card:not(.warnbox){display:none}
 body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t-why,body.trkmode #t-streak{display:none}
 .tip{position:fixed;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;display:none;z-index:9;box-shadow:0 2px 10px rgba(0,0,0,.12)}
 </style></head><body><main>
-<h1>NeuroPilot <small id="fw"></small></h1>
+<h1><span>NeuroPilot <small id="fw"></small></span><button id="bpick" class="pick">Выбрать плату</button></h1>
 <div class="chips" id="chips"></div>
 <div class="card" id="conncard">
   <h2>Связь с платой</h2>
@@ -232,8 +233,8 @@ const g$=id=>document.getElementById(id);
 const bdec=new TextDecoder(),benc=new TextEncoder();
 const KIND_NAME={np:'neuro_pilot (ЭМГ: жесты → пульт)',nf:'neuro_feedback (ЭЭГ-тренировка)'};
 const CONN_HINT='Включи Bluetooth на телефоне и нажми кнопку. В списке выбери NeuroPilot или NeuroTrain (телефон может помнить старое имя — выбирай любую). Страница сама поймёт, какая прошивка залита: вкладки ЭМГ работают с neuro_pilot, ЭЭГ — с neuro_feedback.';
-function connUi(txt,btn){g$('conntxt').textContent=txt;g$('bconn').style.display=btn?'':'none';g$('breconn').style.display=btn&&BLE.dev?'':'none';
- g$('bconn').textContent=BLE.dev?'Выбрать плату заново':'Подключиться к плате';g$('conncard').style.display=BLE.linked?'none':''}
+function connUi(txt,btn){g$('conntxt').textContent=txt;g$('bconn').style.display=(btn||BLE.dev)&&navigator.bluetooth?'':'none';g$('breconn').style.display=BLE.dev?'':'none';
+ g$('bconn').textContent=BLE.dev?'Выбрать плату из списка':'Подключиться к плате';g$('bpick').style.display=navigator.bluetooth?'':'none';g$('conncard').style.display=BLE.linked?'none':''}
 function cmd(c){BLE.wq=BLE.wq.then(async()=>{if(!BLE.chRx)return;try{await withTimeout(BLE.chRx.writeValueWithResponse(benc.encode(c)),5000,'запись')}catch(e){}});return BLE.wq}
 const withTimeout=(p,ms,what)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(what+': нет ответа '+Math.round(ms/1000)+' с')),ms))]);
 // ---- подключение: одна попытка за раз, повторы с нарастающей паузой, без конца, пока не нажали «Отключиться» ----
@@ -242,7 +243,8 @@ async function bleConnect(){
  let dev;try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'},{namePrefix:'NeuroTrain'},{services:[SVC]}],optionalServices:[SVC]})}
  catch(e){connUi(BLE.dev?'Плата не выбрана.':'Не подключилось: '+e.message,true);return}
  if(BLE.dev!==dev){if(BLE.dev){BLE.dev.removeEventListener('gattserverdisconnected',bleOnDisc);try{BLE.dev.gatt.disconnect()}catch(_){}}BLE.dev=dev;dev.addEventListener('gattserverdisconnected',bleOnDisc);BLE.linked=false}
- BLE.manualOff=false;BLE.retry=0;reconnectNow('Подключаюсь…')}
+ else if(BLE.linked){BLE.tok++;try{dev.gatt.disconnect()}catch(_){}BLE.linked=false;BLE.chRx=null}   // та же плата, выбрана заново — подключаемся с нуля
+ BLE.tok++;BLE.busy=false;clearTimeout(BLE.retryT);BLE.manualOff=false;BLE.retry=0;reconnectNow('Подключаюсь…')}
 function reconnectNow(txt){if(BLE.linked||!BLE.dev)return;BLE.manualOff=false;connUi(txt||'Подключаюсь…',false);clearTimeout(BLE.retryT);attempt()}
 async function attempt(){
  if(BLE.linked||BLE.busy||!BLE.dev||BLE.manualOff)return;BLE.busy=true;clearTimeout(BLE.retryT);const tok=BLE.tok=(BLE.tok||0)+1;
@@ -311,7 +313,8 @@ function switchMode(side){if(!BLE.linked)return;BLE.switching=true;cmd('MODE '+(
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function chip0(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
 g$('bconn').onclick=()=>{EMG.gesture();EEG.gesture();bleConnect()};
-g$('breconn').onclick=()=>{EMG.gesture();EEG.gesture();BLE.retry=0;reconnectNow('Переподключаюсь…')};
+g$('breconn').onclick=()=>{EMG.gesture();EEG.gesture();BLE.retry=0;forceReconnect('Переподключаюсь…')};
+g$('bpick').onclick=()=>{EMG.gesture();EEG.gesture();bleConnect()};
 // PING больше не шлём: в фоновой вкладке Chrome шлёт его раз в минуту, и плата v1.5 закрывала живую связь (06.10)
 </script>
 <script>
