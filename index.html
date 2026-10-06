@@ -261,7 +261,7 @@ function route(line){const k=line[0];
   if(/прошивка combo|neuro_combo/.test(t)&&!BLE.modes){BLE.modes=true;tabsUi()}
   if(/^\[mode\]/.test(t)){BLE.modeMsg=t;if(BLE.switching&&/STOP|уже/.test(t)){BLE.switching=false;tabsUi()}}}
  if(k==='H'){let h={};try{h=JSON.parse(line.slice(1))}catch(e){}BLE.modes=!!h.modes;setKind(h.mode==='eeg'?'nf':'np')}   // общая прошивка neuro_combo сообщает режим
- else if(k==='S'){try{const j=JSON.parse(line.slice(1));if(j.fw&&/combo/.test(j.fw)&&!BLE.modes){BLE.modes=true;setTimeout(tabsUi,0)}if(j.fw&&/^nf/i.test(j.fw))setKind('nf');else if('ch7' in j||'mode_ru' in j&&'cal_nsteps' in j)setKind('np')}catch(e){}}
+ else if(k==='S'){try{const j=JSON.parse(line.slice(1));if(j.fw&&/combo/.test(j.fw)&&!BLE.modes){BLE.modes=true;setTimeout(tabsUi,0)}if('ch7' in j||'cal_nsteps' in j)setKind('np');else if('sess_target' in j||j.fw&&/^nf/i.test(j.fw))setKind('nf')/* режим — по полям состояния: работает и без приветствия H */}catch(e){}}
  if(!BLE.kind){if(k==='L')BLE.pend.push(line);return}   // строки журнала до того, как стало ясно, какая прошивка, — отдадим потом
  (BLE.kind==='np'?EMG:EEG).onLine(line)}
 function setKind(k){if(BLE.kind===k)return;BLE.kind=k;const app=k==='np'?EMG:EEG;BLE.pend.splice(0).forEach(l=>app.onLine(l));
