@@ -245,8 +245,8 @@ async function bleConnect(){
 async function gattUp(){connUi('Подключаюсь…',false);const srv=await BLE.dev.gatt.connect(),s=await srv.getPrimaryService(SVC);
  BLE.chRx=await s.getCharacteristic(RXC);const tx=await s.getCharacteristic(TXC);
  tx.addEventListener('characteristicvaluechanged',e=>bleOnData(e.target.value));await tx.startNotifications();
- BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.pend=[];BLE.autoTab=true;BLE.linked=true;g$('fw').textContent='';connUi('',false);tabsUi();
- setTimeout(()=>{if(BLE.linked&&!BLE.kind)cmd('P')},2500);
+ BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.modeMsg='';BLE.pend=[];BLE.autoTab=true;BLE.linked=true;g$('fw').textContent='';connUi('',false);tabsUi();
+ setTimeout(()=>{if(BLE.linked&&!BLE.modes)cmd('P')},2500);   // приветствие H могло прийти раньше подписки и потеряться — версия будет в ответе на P
  setTimeout(()=>{if(BLE.linked&&!BLE.kind){const p=BLE.pend.splice(0);p.forEach(l=>{EMG.onLine(l);EEG.onLine(l)})}},6000)}   // старые прошивки шлют заголовок только при подключении — на всякий случай попросим состояние
 function bleOnDisc(){BLE.linked=false;BLE.chRx=null;g$('chips').innerHTML=chip0('Плата: нет связи','bad');EEG.onDisc();tabsUi();
  if(BLE.userDisc)return;connUi(BLE.switching?'Плата перезагружается в новый режим — переподключаюсь сама, это ~10 с…':'Связь с платой потеряна — переподключаюсь…',true);
@@ -257,8 +257,11 @@ function bleOnData(dv){BLE.inbuf+=bdec.decode(dv,{stream:true});let i;
  while((i=BLE.inbuf.indexOf('\n'))>=0){const l=BLE.inbuf.slice(0,i).replace(/\r$/,'');BLE.inbuf=BLE.inbuf.slice(i+1);if(l)route(l)}}
 // какая прошивка на плате: neuro_pilot шлёт H{...} и S с полем ch7; neuro_feedback шлёт S с fw "nf …"
 function route(line){const k=line[0];
+ if(k==='L'){const t=line.slice(1);
+  if(/прошивка combo|neuro_combo/.test(t)&&!BLE.modes){BLE.modes=true;tabsUi()}
+  if(/^\[mode\]/.test(t)){BLE.modeMsg=t;if(BLE.switching&&/STOP|уже/.test(t)){BLE.switching=false;tabsUi()}}}
  if(k==='H'){let h={};try{h=JSON.parse(line.slice(1))}catch(e){}BLE.modes=!!h.modes;setKind(h.mode==='eeg'?'nf':'np')}   // общая прошивка neuro_combo сообщает режим
- else if(k==='S'){try{const j=JSON.parse(line.slice(1));if(j.fw&&/^nf/i.test(j.fw))setKind('nf');else if('ch7' in j||'mode_ru' in j&&'cal_nsteps' in j)setKind('np')}catch(e){}}
+ else if(k==='S'){try{const j=JSON.parse(line.slice(1));if(j.fw&&/combo/.test(j.fw)&&!BLE.modes){BLE.modes=true;setTimeout(tabsUi,0)}if(j.fw&&/^nf/i.test(j.fw))setKind('nf');else if('ch7' in j||'mode_ru' in j&&'cal_nsteps' in j)setKind('np')}catch(e){}}
  if(!BLE.kind){if(k==='L')BLE.pend.push(line);return}   // строки журнала до того, как стало ясно, какая прошивка, — отдадим потом
  (BLE.kind==='np'?EMG:EEG).onLine(line)}
 function setKind(k){if(BLE.kind===k)return;BLE.kind=k;const app=k==='np'?EMG:EEG;BLE.pend.splice(0).forEach(l=>app.onLine(l));
@@ -278,7 +281,7 @@ function tabsUi(){const side=TAB_KIND[curTab];
  g$('e-mismatch').classList.add('off');g$('t-mismatch').classList.add('off');g$('emg').classList.toggle('mm',!!mm&&side==='np');g$('eeg').classList.toggle('mm',!!mm&&side==='nf');
  if(mm){box.classList.remove('off');const want=side==='np'?'ЭМГ':'ЭЭГ',cur=BLE.kind==='np'?'ЭМГ':'ЭЭГ';
   box.innerHTML=BLE.modes?
-   `<b>Плата сейчас в режиме ${cur}.</b> Эта вкладка — режим ${want}. Переключение перезагрузит плату (~10 с), страница переподключится сама. Во время калибровки или сессии плата откажет — сначала «Остановить».`+
+   `<b>Плата сейчас в режиме ${cur}.</b> Эта вкладка — режим ${want}. Переключение перезагрузит плату (~10 с), страница переподключится сама. Во время калибровки или сессии плата откажет — сначала «Остановить».`+(BLE.modeMsg?`<div style="margin-top:8px"><b>Ответ платы:</b> ${BLE.modeMsg.replace(/[<>&]/g,'')}</div>`:'')+
    `<div class="row" style="margin-top:10px"><button class="primary" onclick="switchMode('${side}')">Переключить плату в ${want}</button><button onclick="showTab(lastTab['${BLE.kind}'])">Вернуться в ${cur}</button></div>`:
    `<b>На плате другая прошивка.</b> Сейчас залита ${KIND_NAME[BLE.kind]}. Эта вкладка работает с прошивкой <b>${side==='np'?'firmware/neuro_pilot':'firmware/neuro_feedback'}</b> (или общей <b>firmware/neuro_combo</b>) — залей её и подключись снова. Или перейди на вкладку `+
   `<button style="min-height:32px;padding:4px 10px" onclick="showTab(lastTab['${BLE.kind}'])">${BLE.kind==='np'?'ЭМГ':'ЭЭГ'}</button>`}}
