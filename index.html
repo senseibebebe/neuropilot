@@ -30,11 +30,12 @@ pre.log{font:12px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;max-hei
 details summary{cursor:pointer;font-weight:600}
 canvas{width:100%;display:block}
 /* вкладки */
-.tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:8px 0 6px;margin-top:8px}
+.tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,.75fr);gap:4px;padding:8px 0 6px;margin-top:8px}
 .tabs button{min-height:48px;padding:6px 4px;font-size:13px;line-height:1.2;border-radius:10px}
 .tabs button small{display:block;font-size:11px;color:var(--ink2);font-weight:400}
 .tabs button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}.tabs button.on small{color:#fff;opacity:.85}
 .tabs button.na{opacity:.55}
+@media (max-width:430px){.tabs button{font-size:11.5px;padding:6px 1px}.tabs button small{font-size:10.5px}}
 .off{display:none!important}
 section.mm>.card:not(.warnbox){display:none}
 .warnbox{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 12%,var(--card))}
@@ -80,6 +81,21 @@ section.mm>.card:not(.warnbox){display:none}
 #eeg .streak span.on{background:var(--green);border-color:var(--green)}
 #eeg .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}#eeg .kv div{background:var(--chip);border-radius:10px;padding:8px}#eeg .kv b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
 #t-trkWrap{margin-bottom:10px}
+/* ЭЭГ демо (чужая открытая запись) */
+body.demo #conncard{display:none}
+#demo .src{font-size:13px;color:var(--ink2)}#demo .src b{color:var(--ink)}
+#d-head{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#d-cue,#d-cmd{border-radius:14px;padding:12px 8px;text-align:center;min-height:86px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+#d-cue small,#d-cmd small{font-size:12px;opacity:.85;font-weight:500}#d-cue b,#d-cmd b{font-size:21px;line-height:1.15}
+#d-cue{background:var(--chip);color:var(--ink2)}#d-cue.L{background:color-mix(in srgb,var(--orange) 18%,var(--card));color:var(--orange)}#d-cue.R{background:color-mix(in srgb,var(--blue) 18%,var(--card));color:var(--blue)}
+#d-cmd{background:var(--chip);color:var(--ink)}#d-cmd.c1000{background:var(--orange);color:#fff}#d-cmd.c2000{background:var(--blue);color:#fff}
+#d-cmd .v{font-size:12px;font-weight:600;margin-top:2px}
+#d-plot{height:300px;margin-top:10px;border-radius:10px;background:var(--card)}
+#d-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--ink2);margin-top:8px;font-variant-numeric:tabular-nums}#d-meta b{color:var(--ink)}
+#demo .ctl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px;align-items:center}
+#demo .ctl select{width:100%}
+@media (max-width:560px){#demo .ctl{grid-template-columns:1fr 1fr}#d-run{grid-column:1/-1}}
+#demo td.n b{font-weight:600}
 #t-trk{width:100%;height:min(52vh,360px);display:block;border-radius:14px;border:8px solid var(--line);background:var(--card);touch-action:manipulation;transition:border-color .3s,box-shadow .3s}
 #t-trk.c-base{border-color:var(--ink2);border-style:dashed}#t-trk.c-rest{border-color:var(--grey)}#t-trk.c-up{border-color:var(--blue)}#t-trk.c-dn{border-color:var(--orange)}
 #t-trk.good{box-shadow:0 0 0 5px var(--green)}
@@ -100,6 +116,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
   <button data-tab="ectl">Управление<small>ЭМГ</small></button>
   <button data-tab="ttrain">Тренировка<small>ЭЭГ</small></button>
   <button data-tab="tcal">Калибровка<small>ЭЭГ</small></button>
+  <button data-tab="demo">ЭЭГ<small>демо</small></button>
 </nav>
 
 <!-- ===================== ЭМГ: прошивка neuro_pilot (жесты лица → пульт) ===================== -->
@@ -224,6 +241,52 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
 <div class="card"><h2>Журнал платы</h2><pre class="log" id="t-log"></pre><div class="row" style="margin-top:8px"><button id="t-bstate">Состояние (P)</button><button onclick="forceReconnect()">Переподключить</button><button id="t-bdisc">Отключиться</button></div></div>
 <div class="tip" id="t-tip"></div>
 </section>
+
+<!-- ===================== ЭЭГ демо: проигрывание чужой открытой записи, без платы ===================== -->
+<section id="demo" class="off">
+<div class="card warnbox">
+  <b>Это не наша гарнитура.</b> Чужая открытая запись из базы PhysioNet EEGMMIDB: испытуемый <b id="d-subj">—</b>,
+  64 электрода по всей голове, 160 Гц. Человек по подсказке на экране <b>представлял</b> сжатие левого или правого кулака,
+  не двигаясь. Страница только проигрывает заранее посчитанное: плата и гарнитура не нужны. <b>На BrainLink так не работает</b> —
+  у неё один электрод на лбу (Fp1), а этот сигнал рождается над моторной корой (C3, C4).
+</div>
+
+<div class="card">
+  <div id="d-head">
+    <div id="d-cue"><small>Подсказка человеку</small><b id="d-cueT">—</b></div>
+    <div id="d-cmd"><small>Решение → команда</small><b id="d-cmdT">—</b><div class="v" id="d-cmdV"></div></div>
+  </div>
+  <canvas id="d-plot"></canvas>
+  <div id="d-meta"><span id="d-pos">—</span><span id="d-score">—</span></div>
+  <div class="ctl">
+    <button class="primary" id="d-play" disabled>▶ Пуск</button>
+    <button id="d-next" disabled>Следующая попытка</button>
+    <select id="d-run" aria-label="Запись"></select>
+    <select id="d-speed" aria-label="Скорость"><option value="1">Скорость 1×</option><option value="2" selected>Скорость 2×</option><option value="4">Скорость 4×</option></select>
+  </div>
+  <div class="muted" id="d-load" style="margin-top:8px">Загружаю запись…</div>
+  <div class="muted" style="margin-top:8px">Сверху — сигнал трёх электродов (8–30 Гц, общий масштаб): C3 и C4 над моторной корой, Fp1 — там, где
+    электрод BrainLink. Внизу — выход классификатора по окну 2 с (вверх — «правая», вниз — «левая»). Решение принимается
+    раз в попытку, через 2,5 с после подсказки: <b>левая → НАЗАД (CH7 1000)</b>, <b>правая → ВПЕРЁД (CH7 2000)</b>,
+    в остальное время 1500. Классификатор (CSP + LDA, 21 электрод FC/C/CP) обучен на двух других записях этого человека
+    и эту запись не видел.</div>
+</div>
+
+<div class="card">
+  <h2>Насколько это типично</h2>
+  <div class="muted" id="d-this" style="margin-bottom:8px"></div>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Воображение левой/правой руки</th><th class="n">Медиана</th><th class="n">Выше случайности</th></tr></thead>
+    <tbody id="d-tab"></tbody>
+  </table></div>
+  <div class="muted" id="d-note" style="margin-top:8px"></div>
+  <div class="src" style="margin-top:10px">Источник данных: PhysioNet, EEG Motor Movement/Imagery Dataset (лицензия ODC-By 1.0).
+    Schalk G. et al. BCI2000: A General-Purpose Brain-Computer Interface (BCI) System. IEEE TBME 51(6):1034–1043, 2004.
+    Goldberger A. et al. PhysioBank, PhysioToolkit, and PhysioNet. Circulation 101(23):e215–e220, 2000.
+    <a href="https://physionet.org/content/eegmmidb/1.0.0/" target="_blank" rel="noopener">physionet.org/content/eegmmidb</a>.
+    Расчёт: rc-neuro/tools/eegmmidb в репозитории проекта.</div>
+</div>
+</section>
 </main>
 <script>
 // ===================== общая часть: связь с платой по BLE (Nordic UART) и вкладки =====================
@@ -290,16 +353,16 @@ function setKind(k){if(BLE.kind===k)return;BLE.kind=k;BLE.switching=false;BLE.mo
  if(BLE.autoTab){BLE.autoTab=false;if(TAB_KIND[curTab]!==k)showTab(lastTab[k])}
  tabsUi()}
 // ---------- вкладки ----------
-const TAB_KIND={ecal:'np',ectl:'np',ttrain:'nf',tcal:'nf'};
+const TAB_KIND={ecal:'np',ectl:'np',ttrain:'nf',tcal:'nf',demo:'demo'};
 let curTab='ecal',lastTab={np:'ecal',nf:'ttrain'};
 try{const t=localStorage.getItem('np_tab');if(t in TAB_KIND)curTab=t;const lt=JSON.parse(localStorage.getItem('np_lasttab')||'null');if(lt&&lt.np in TAB_KIND&&lt.nf in TAB_KIND)lastTab=lt}catch(e){}
 function showTab(t){curTab=t;lastTab[TAB_KIND[t]]=t;try{localStorage.setItem('np_tab',t);localStorage.setItem('np_lasttab',JSON.stringify(lastTab))}catch(e){}tabsUi();
- if(TAB_KIND[t]==='nf')EEG.redraw()}
+ if(TAB_KIND[t]==='nf')EEG.redraw();DEMO.shown(t==='demo')}
 function tabsUi(){const side=TAB_KIND[curTab];
- document.querySelectorAll('#tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.tab===curTab);b.classList.toggle('na',!!BLE.kind&&TAB_KIND[b.dataset.tab]!==BLE.kind)});
- g$('emg').classList.toggle('off',side!=='np');g$('eeg').classList.toggle('off',side!=='nf');
+ document.querySelectorAll('#tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.tab===curTab);b.classList.toggle('na',!!BLE.kind&&b.dataset.tab!=='demo'&&TAB_KIND[b.dataset.tab]!==BLE.kind)});
+ g$('emg').classList.toggle('off',side!=='np');g$('eeg').classList.toggle('off',side!=='nf');g$('demo').classList.toggle('off',side!=='demo');document.body.classList.toggle('demo',side==='demo');
  document.querySelectorAll('[data-tabs]').forEach(el=>el.classList.toggle('off',!el.dataset.tabs.split(' ').includes(curTab)));
- const mm=BLE.kind&&BLE.kind!==side,box=g$(side==='np'?'e-mismatch':'t-mismatch');
+ const mm=BLE.kind&&side!=='demo'&&BLE.kind!==side,box=g$(side==='np'?'e-mismatch':'t-mismatch');
  g$('e-mismatch').classList.add('off');g$('t-mismatch').classList.add('off');g$('emg').classList.toggle('mm',!!mm&&side==='np');g$('eeg').classList.toggle('mm',!!mm&&side==='nf');
  if(mm){box.classList.remove('off');const want=side==='np'?'ЭМГ':'ЭЭГ',cur=BLE.kind==='np'?'ЭМГ':'ЭЭГ';
   box.innerHTML=BLE.modes?
@@ -676,7 +739,80 @@ $('bdisc').onclick=()=>bleDisconnect();
 return {onLine,onDisc:()=>{fbTone(false);chips()},gesture:soundAuto,redraw:()=>{drawLive();renderHist();if(st)renderState()}};
 
 })();
-connUi(CONN_HINT,true);g$('chips').innerHTML=chip0('Плата: нет связи','bad');tabsUi();
+</script>
+<script>
+// ===================== ЭЭГ демо: проигрывание заранее посчитанной чужой записи (без платы) =====================
+const DEMO=(()=>{
+const $=id=>document.getElementById('d-'+id);
+const URL_DATA='eeg_demo.json';
+let D=null,R=null,tr={},t=0,playing=false,last=0,loading=false,visible=false,raf=0;
+const pct=x=>(x*100).toFixed(1).replace('.',',')+' %';
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function b64i8(s){const b=atob(s),a=new Int8Array(b.length);for(let i=0;i<b.length;i++)a[i]=(b.charCodeAt(i)<<24)>>24;return a}
+async function load(){if(D||loading)return;loading=true;
+ try{const r=await fetch(URL_DATA);if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
+ catch(e){$('load').textContent='Не загрузилась запись ('+e.message+'). Нужен доступ к сайту хотя бы один раз; при открытии файла с диска браузер её не отдаёт.';loading=false;return}
+ loading=false;$('load').style.display='none';$('subj').textContent=D.subject;
+ $('run').innerHTML=D.runs.map((r,i)=>`<option value="${i}">Запись ${r.run}</option>`).join('');
+ $('play').disabled=false;$('next').disabled=false;summary();setRun(0)}
+function setRun(i){R=D.runs[i];tr={};for(const c in R.traces)tr[c]={a:b64i8(R.traces[c].b64),sc:R.traces[c].scale_uV};
+ R.vmax=Math.max(4,...R.dec.map(Math.abs).sort((a,b)=>a-b).slice(Math.floor(R.dec.length*.98)));t=0;$('run').value=i;draw()}
+function summary(){const G=D.group,T=D.this;
+ $('this').innerHTML=`Испытуемый ${D.subject} — один из лучших: на этой записи вне обучения верно <b>${D.runs.reduce((s,r)=>s+r.trials.filter(x=>x.ok).length,0)} из ${D.n_trials}</b> (${pct(D.acc_loro)}); при перекрёстной проверке — ${pct(T.acc_csp_central21)} на 21 центральном электроде и <b>${pct(T.acc_fp1)} на одном Fp1</b> (уровень случайности).`;
+ const rows=[['64 электрода, CSP + LDA',G.csp64],['21 центральный FC/C/CP, CSP + LDA',G.csp_central21],['3 над моторной корой C3, Cz, C4',G.c3czc4],['17 лобных Fp/AF/F, CSP + LDA',G.csp_frontal17],['1 лобный Fp1 — как BrainLink',G.fp1]];
+ $('tab').innerHTML=rows.map(([n,v])=>`<tr><td>${n}</td><td class="n">${pct(v.median)}</td><td class="n"><b>${v.above}</b> из ${G.n}</td></tr>`).join('');
+ const A=D.alpha;$('note').innerHTML=`«Выше случайности» — точность не ниже ${pct(G.chance)} (45 попыток, p &lt; 0,05); случайно так выходит примерно у 5 человек из 105. `+
+  (A?`Для сравнения, альфа-ритм «закрыл глаза»: затылок O1/Oz/O2 — ${A.above_O} из ${A.n} (медиана ${pct(A.median_O)}), Fp1 — ${A.above_Fp1} из ${A.n} (медиана ${pct(A.median_Fp1)}).`:'')}
+function at(time){let cue=null,trial=null;for(const c of R.cues)if(time>=c.t&&time<c.t+c.d){cue=c;break}
+ for(const x of R.trials)if(time>=x.t_dec&&time<x.t+x.d){trial=x;break}
+ const done=R.trials.filter(x=>x.t_dec<=time),idx=R.trials.filter(x=>x.t<=time).length;return{cue,trial,done,idx}}
+function ui(){const s=at(t);const cl=s.cue&&s.cue.lab!=='rest'?s.cue.lab:'';
+ $('cue').className=cl;$('cueT').textContent=!s.cue?'—':s.cue.lab==='L'?'Представь: ЛЕВАЯ рука':s.cue.lab==='R'?'Представь: ПРАВАЯ рука':'Отдых';
+ const v=s.trial?s.trial.ch7:1500;$('cmd').className=v===1000?'c1000':v===2000?'c2000':'';
+ $('cmdT').textContent=v===1000?'НАЗАД · CH7 1000':v===2000?'ВПЕРЁД · CH7 2000':'CH7 1500';
+ $('cmdV').textContent=s.trial?(s.trial.ok?'✓ совпало с подсказкой':'✗ ошибка: была '+(s.trial.lab==='L'?'левая':'правая')):(cl?'жду 2,5 с после подсказки':'центр');
+ $('pos').innerHTML=`${R.run} · попытка <b>${Math.max(1,s.idx)} из ${R.trials.length}</b> · ${fmt(t)} / ${fmt(R.dur)}`;
+ const ok=s.done.filter(x=>x.ok).length;$('score').innerHTML=s.done.length?`верно <b>${ok} из ${s.done.length}</b>`:'решений ещё нет'}
+function draw(){if(!R)return;ui();const cv=$('plot'),dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+ if(!W)return;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+ const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+ const SPAN=W<500?6:10,t1=Math.max(t,SPAN),t0=t1-SPAN,L=46,PW=W-L-4,X=s=>L+(s-t0)/SPAN*PW;
+ const ink=css('--ink'),ink2=css('--ink2'),line=css('--line'),blue=css('--blue'),orange=css('--orange'),green=css('--green'),red=css('--red');
+ const lanes=[['C3',0,58],['C4',58,58],['FP1',116,58]],dTop=184,dH=H-dTop-14;
+ // подсказки фоном
+ for(const c of R.cues){if(c.lab==='rest'||c.t+c.d<t0||c.t>t1)continue;g.fillStyle=c.lab==='L'?orange:blue;g.globalAlpha=.12;
+  g.fillRect(Math.max(L,X(c.t)),0,Math.min(X(c.t+c.d),L+PW)-Math.max(L,X(c.t)),H-14);g.globalAlpha=1}
+ g.font='12px -apple-system,Segoe UI,Roboto,sans-serif';g.textBaseline='middle';
+ const fs=D.fs_trace,i0=Math.max(0,Math.floor(t0*fs)),i1=Math.min(tr.C3.a.length,Math.floor(Math.min(t,t1)*fs));
+ for(const [c,y0,h] of lanes){const a=tr[c].a,mid=y0+h/2;g.strokeStyle=line;g.lineWidth=1;g.beginPath();g.moveTo(L,mid);g.lineTo(L+PW,mid);g.stroke();
+  g.fillStyle=ink2;g.fillText(c==='FP1'?'Fp1':c,6,mid);g.strokeStyle=c==='FP1'?ink2:ink;g.lineWidth=1;g.beginPath();
+  const stp=Math.max(1,Math.floor((i1-i0)/(PW*2)));for(let i=i0;i<i1;i+=stp){const x=L+(i/fs-t0)/SPAN*PW,y=mid-a[i]/127*(h/2-3);i===i0?g.moveTo(x,y):g.lineTo(x,y)}g.stroke()}
+ // масштаб
+ const uv=Math.round(127*tr.C3.sc/2);g.fillStyle=ink2;g.font='11px -apple-system,Segoe UI,Roboto,sans-serif';g.fillText('±'+uv*2+' мкВ',6,170);
+ // выход классификатора
+ const dm=dTop+dH/2,vs=dH/2/R.vmax;g.strokeStyle=line;g.beginPath();g.moveTo(L,dm);g.lineTo(L+PW,dm);g.stroke();
+ g.fillStyle=ink2;g.font='11px -apple-system,Segoe UI,Roboto,sans-serif';g.fillText('прав.',6,dTop+8);g.fillText('лев.',6,dTop+dH-8);g.fillText('выход',6,dm);
+ g.strokeStyle=ink;g.lineWidth=2;g.beginPath();let first=true;
+ for(let k=0;k<R.dec.length;k++){const tt=R.dec_t0+k*D.step;if(tt<t0||tt>t)continue;const x=X(tt),y=dm-Math.max(-R.vmax,Math.min(R.vmax,R.dec[k]))*vs;first?(g.moveTo(x,y),first=false):g.lineTo(x,y)}g.stroke();
+ for(const x of R.trials){if(x.t_dec<t0||x.t_dec>t)continue;const px=X(x.t_dec),py=dm-Math.max(-R.vmax,Math.min(R.vmax,x.v))*vs;
+  g.fillStyle=x.ok?green:red;g.beginPath();g.arc(px,py,6,0,7);g.fill();g.strokeStyle=css('--card');g.lineWidth=2;g.stroke();
+  g.fillStyle=x.ok?green:red;g.font='bold 13px -apple-system,Segoe UI,Roboto,sans-serif';g.fillText(x.ok?'✓':'✗',Math.min(px+8,W-12),py-10)}
+ // шкала времени
+ g.fillStyle=ink2;g.font='11px -apple-system,Segoe UI,Roboto,sans-serif';g.textBaseline='alphabetic';
+ for(let s=Math.ceil(t0);s<=t1;s+=SPAN>6?2:1){const x=X(s);g.fillText(fmt(s),Math.min(Math.max(L,x-10),W-30),H-2)}
+ g.strokeStyle=ink2;g.setLineDash([3,3]);g.beginPath();g.moveTo(X(t),0);g.lineTo(X(t),H-14);g.stroke();g.setLineDash([])}
+function loop(now){raf=0;if(!playing)return;const dt=Math.min(.25,(now-last)/1000);last=now;t+=dt*(+$('speed').value);
+ if(t>=R.dur){const i=(D.runs.indexOf(R)+1)%D.runs.length;setRun(i)}draw();raf=requestAnimationFrame(loop)}
+function play(on){playing=on&&!!R;$('play').textContent=playing?'⏸ Пауза':'▶ Пуск';if(playing&&!raf){last=performance.now();raf=requestAnimationFrame(loop)}}
+$('play').onclick=()=>play(!playing);
+$('run').onchange=()=>{setRun(+$('run').value)};
+$('next').onclick=()=>{if(!R)return;const n=R.trials.find(x=>x.t>t+.05);if(n)t=Math.max(0,n.t-1);else{setRun((D.runs.indexOf(R)+1)%D.runs.length)}draw()};
+window.addEventListener('resize',()=>{if(visible)draw()});
+if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if(visible)draw()});
+return{shown:on=>{visible=on;if(on){load();draw()}else play(false)}};
+})();
+connUi(CONN_HINT,true);g$('chips').innerHTML=chip0('Плата: нет связи','bad');tabsUi();if(curTab==='demo')DEMO.shown(true);
 </script><script>
 // офлайн-режим: страница сохраняется в телефоне после первого открытия
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
