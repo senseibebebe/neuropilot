@@ -2,96 +2,297 @@
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>NeuroPilot</title>
+<meta name="theme-color" content="#2a78d6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-
-<meta name="theme-color" content="#2a78d6">
 <style>
-:root{--bg:#f6f6f4;--card:#fff;--ink:#141414;--ink2:#5b5b57;--line:#e3e2dd;--blue:#2a78d6;--green:#1a8a4a;--red:#d23b3b;--amber:#c98500;--violet:#4a3aa7;--chip:#efeee9}
-@media (prefers-color-scheme:dark){:root{--bg:#121212;--card:#1d1d1c;--ink:#f2f2ef;--ink2:#a9a8a1;--line:#33332f;--chip:#2a2a28;--blue:#4a92ea;--green:#35b56b;--red:#ef6161;--amber:#e3a21a;--violet:#9085e9}}
+:root{--orange:#e8590c;--bg:#f6f6f4;--card:#fff;--ink:#141414;--ink2:#5b5b57;--line:#e3e2dd;--blue:#2a78d6;--green:#1a8a4a;--red:#d23b3b;--amber:#c98500;--violet:#4a3aa7;--grey:#9a9993;--chip:#efeee9}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--card:#1d1d1c;--ink:#f2f2ef;--ink2:#a9a8a1;--line:#33332f;--chip:#2a2a28;--blue:#4a92ea;--orange:#f08a35;--green:#35b56b;--red:#ef6161;--amber:#e3a21a;--violet:#9085e9;--grey:#6d6c66}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-main{max-width:640px;margin:0 auto;padding:12px 16px 40px}
-h1{font-size:18px;margin:4px 0 10px;display:flex;justify-content:space-between;align-items:center}
-h1 small{font-weight:400;color:var(--ink2);font-size:12px}
+main{max-width:720px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:18px;margin:4px 0 10px;display:flex;justify-content:space-between;align-items:center}h1 small{font-weight:400;color:var(--ink2);font-size:12px}
+h2{font-size:15px;margin:0 0 8px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:var(--chip);border-radius:99px;padding:4px 10px;font-size:13px;display:flex;align-items:center;gap:6px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--ink2)}.ok .dot{background:var(--green)}.bad .dot{background:var(--red)}.warn .dot{background:var(--amber)}
-#cue{font-size:26px;font-weight:700;text-align:center;padding:22px 10px;border-radius:14px;min-height:96px;display:flex;align-items:center;justify-content:center;transition:background .2s}
-#cue.k-cue{background:color-mix(in srgb,var(--blue) 18%,var(--card));color:var(--blue)}
-#cue.k-ok,#cue.k-takeoff{background:color-mix(in srgb,var(--green) 18%,var(--card));color:var(--green)}
-#cue.k-fail,#cue.k-safe{background:color-mix(in srgb,var(--red) 18%,var(--card));color:var(--red)}
-#cue.k-land{background:color-mix(in srgb,var(--amber) 20%,var(--card));color:var(--amber)}
-#cue.k-idle{background:var(--chip);color:var(--ink2);font-size:18px;font-weight:500}
-#cue{flex-direction:column;gap:4px}#cue small{display:block;font-size:15px;font-weight:500;opacity:.9}
-#cue.k-ready{background:var(--chip);color:var(--ink);font-size:22px}
-#cue.k-now{background:#d61f1f;color:#fff;font-size:34px;transition:none}
-#cue.k-got{background:#1a8a4a;color:#fff;font-size:30px;transition:none}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 button{font:inherit;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer;min-height:44px}
-button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
-button.danger{color:var(--red)}button:active{transform:scale(.98)}
-.big{flex:1 1 100%;font-size:17px}
-.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;margin:8px 0 4px}.bar i{display:block;height:100%;background:var(--blue);width:0;transition:width .3s}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}button.danger{color:var(--red)}button:active{transform:scale(.98)}
+button:disabled{opacity:.45;cursor:default}
 .muted{color:var(--ink2);font-size:13px}
-table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--ink2);font-weight:500;font-size:12px}
-td.n{text-align:right;font-variant-numeric:tabular-nums}
+input,select{font:inherit;width:100%;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--ink2);font-weight:500;font-size:12px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .tag{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--chip);color:var(--ink2)}.tag.g{color:var(--green)}.tag.r{color:var(--red)}
-#log{font:12px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--chip);border-radius:10px;padding:8px;margin:0}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-label{font-size:13px;color:var(--ink2)}input{font:inherit;width:100%;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}.kv b{font-weight:600}
+pre.log{font:12px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;max-height:240px;overflow:auto;background:var(--chip);border-radius:10px;padding:8px;margin:0}
+details summary{cursor:pointer;font-weight:600}
+canvas{width:100%;display:block}
+/* вкладки */
+.tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:8px 0 6px;margin-top:8px}
+.tabs button{min-height:48px;padding:6px 4px;font-size:13px;line-height:1.2;border-radius:10px}
+.tabs button small{display:block;font-size:11px;color:var(--ink2);font-weight:400}
+.tabs button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}.tabs button.on small{color:#fff;opacity:.85}
+.tabs button.na{opacity:.55}
+.off{display:none!important}
+section.mm>.card:not(.warnbox){display:none}
+.warnbox{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 12%,var(--card))}
+/* ЭМГ */
+#emg .big{flex:1 1 100%;font-size:17px}
+#emg table{font-size:14px}
+#emg label{font-size:13px;color:var(--ink2)}
+#e-cue{font-size:26px;font-weight:700;text-align:center;padding:22px 10px;border-radius:14px;min-height:96px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;transition:background .2s}
+#e-cue small{display:block;font-size:15px;font-weight:500;opacity:.9}
+#e-cue.k-cue{background:color-mix(in srgb,var(--blue) 18%,var(--card));color:var(--blue)}
+#e-cue.k-ok,#e-cue.k-takeoff{background:color-mix(in srgb,var(--green) 18%,var(--card));color:var(--green)}
+#e-cue.k-fail,#e-cue.k-safe{background:color-mix(in srgb,var(--red) 18%,var(--card));color:var(--red)}
+#e-cue.k-land{background:color-mix(in srgb,var(--amber) 20%,var(--card));color:var(--amber)}
+#e-cue.k-idle{background:var(--chip);color:var(--ink2);font-size:18px;font-weight:500}
+#e-cue.k-ready{background:var(--chip);color:var(--ink);font-size:22px}
+#e-cue.k-now{background:#d61f1f;color:#fff;font-size:34px;transition:none}
+#e-cue.k-got{background:#1a8a4a;color:#fff;font-size:30px;transition:none}
+#emg .bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;margin:8px 0 4px}#emg .bar i{display:block;height:100%;background:var(--blue);width:0;transition:width .3s}
+#emg .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+#emg .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}#emg .kv b{font-weight:600}
+/* ЭЭГ */
+#eeg .big{flex:1 1 200px;font-size:16px}
+#eeg .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+#eeg label{font-size:12px;color:var(--ink2);display:block;margin-bottom:2px}
+#t-phase{text-align:center;border-radius:14px;padding:16px 10px;transition:background .3s}
+#t-phase .t{font-size:28px;font-weight:700}#t-phase .s{font-size:13px;margin-top:6px;opacity:.85}#t-phase .task{font-size:16px;margin-top:6px;color:var(--ink);line-height:1.35}
+#eeg .mcap{margin-top:12px;font-size:14px;color:var(--ink2);text-align:center}#eeg .mcap b{color:var(--ink)}
+#t-phase.p-idle,#t-phase.p-done{background:var(--chip);color:var(--ink2)}
+#t-phase.p-base{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--amber)}
+#t-phase.p-rest{background:var(--chip);color:var(--ink)}
+#t-phase.p-up,#t-phase.p-free{background:color-mix(in srgb,var(--blue) 16%,var(--card));color:var(--blue)}
+#t-phase.win{background:color-mix(in srgb,var(--green) 22%,var(--card));color:var(--green)}
+#t-phase.p-dn{background:color-mix(in srgb,var(--orange) 18%,var(--card));color:var(--orange)}
+#eeg .meter{position:relative;height:46px;background:var(--chip);border-radius:12px;overflow:hidden;margin-top:12px}
+#eeg .meter i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--blue);transition:width .5s,background .3s}
+#eeg .meter .thr{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--ink);opacity:.8}
+#eeg .meter .base{position:absolute;top:0;bottom:0;width:2px;background:var(--ink2);opacity:.5}
+#eeg .meter .thrlo{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--orange);opacity:.9}
+#eeg .meter b{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:22px;font-variant-numeric:tabular-nums}
+#eeg .meter.dirty i{background:var(--grey)}#eeg .meter.above i{background:var(--green)}
+#t-why{min-height:20px;margin-top:6px;font-size:14px;text-align:center}
+#eeg .streak{display:flex;gap:6px;justify-content:center;margin-top:8px}#eeg .streak span{width:16px;height:16px;border-radius:50%;background:var(--chip);border:1px solid var(--line)}
+#eeg .streak span.on{background:var(--green);border-color:var(--green)}
+#eeg .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}#eeg .kv div{background:var(--chip);border-radius:10px;padding:8px}#eeg .kv b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+#t-trkWrap{margin-bottom:10px}
+#t-trk{width:100%;height:min(52vh,360px);display:block;border-radius:14px;border:8px solid var(--line);background:var(--card);touch-action:manipulation;transition:border-color .3s,box-shadow .3s}
+#t-trk.c-base{border-color:var(--ink2);border-style:dashed}#t-trk.c-rest{border-color:var(--grey)}#t-trk.c-up{border-color:var(--blue)}#t-trk.c-dn{border-color:var(--orange)}
+#t-trk.good{box-shadow:0 0 0 5px var(--green)}
+#t-trkInfo{text-align:center;margin-top:4px}
+body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t-why,body.trkmode #t-streak{display:none}
+.tip{position:fixed;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;display:none;z-index:9;box-shadow:0 2px 10px rgba(0,0,0,.12)}
 </style></head><body><main>
 <h1>NeuroPilot <small id="fw"></small></h1>
 <div class="chips" id="chips"></div>
 <div class="card" id="conncard">
-  <div style="font-weight:600;margin-bottom:6px">Связь с платой</div>
-  <div class="muted" id="conntxt">Включи Bluetooth на телефоне и нажми кнопку. В списке выбери NeuroPilot.</div>
-  <div class="row" style="margin-top:10px"><button class="primary big" id="bconn">Подключиться к NeuroPilot</button></div>
+  <h2>Связь с платой</h2>
+  <div class="muted" id="conntxt"></div>
+  <div class="row" style="margin-top:10px"><button class="primary big" id="bconn" style="flex:1 1 100%;font-size:17px">Подключиться к плате</button></div>
 </div>
 
+<nav class="tabs" id="tabs">
+  <button data-tab="ecal">Калибровка<small>ЭМГ</small></button>
+  <button data-tab="ectl">Управление<small>ЭМГ</small></button>
+  <button data-tab="ttrain">Тренировка<small>ЭЭГ</small></button>
+  <button data-tab="tcal">Калибровка<small>ЭЭГ</small></button>
+</nav>
+
+<!-- ===================== ЭМГ: прошивка neuro_pilot (жесты лица → пульт) ===================== -->
+<section id="emg">
+<div class="card warnbox off" id="e-mismatch"></div>
 <div class="card">
-  <div id="cue" class="k-idle">Подключение…</div>
-  <div id="calbox" style="display:none">
-    <div class="bar"><i id="calbar"></i></div>
-    <div class="muted" id="caltxt"></div>
+  <div id="e-cue" class="k-idle">Подключи плату</div>
+  <div id="e-calbox" style="display:none">
+    <div class="bar"><i id="e-calbar"></i></div>
+    <div class="muted" id="e-caltxt"></div>
   </div>
-  <div class="muted" id="owner" style="margin-top:6px"></div>
+  <div class="muted" id="e-owner" style="margin-top:6px"></div>
   <div class="row" style="margin-top:12px">
-    <button class="primary big" id="bcal">Калибровка</button>
-    <button class="danger big" id="bstop" style="display:none">Остановить калибровку</button>
-    <button id="bsound">Включить звук</button>
-    <button id="barm">Запретить команды</button>
+    <button class="primary big" id="e-bcal" data-tabs="ecal">Калибровка</button>
+    <button class="danger big" id="e-bstop" style="display:none">Остановить калибровку</button>
+    <button id="e-bsound">Включить звук</button>
+    <button id="e-barm" data-tabs="ectl">Запретить команды</button>
   </div>
+  <div class="muted" style="margin-top:8px" data-tabs="ecal">Калибровка ~3 мин: сначала покой, потом брови (ВПЕРЁД) и сжатие зубов (НАЗАД) вперемешку — делай жест, когда экран станет красным. В конце — проверка из 6 жестов.</div>
 </div>
 
-<div class="card">
-  <div class="kv" id="prof"></div>
+<div class="card" data-tabs="ecal ectl">
+  <div class="kv" id="e-prof"></div>
 </div>
 
-<div class="card" id="pairsCard" style="display:none">
+<div class="card" id="e-pairsCard" style="display:none" data-tabs="ecal">
   <div style="font-weight:600;margin-bottom:6px">Пары жестов (по последней калибровке)</div>
-  <table><thead><tr><th>Пара</th><th class="n">Точн.</th><th class="n">Ложн. движ.</th><th class="n">Ложн. 3-й</th><th></th></tr></thead><tbody id="pairs"></tbody></table>
-  <div class="muted" style="margin-top:6px">С v7.6 калибруется только пара брови (ВПЕРЁД) + челюсть (НАЗАД), жесты идут вперемешку; в конце — проверка из 6 жестов.</div>
+  <table><thead><tr><th>Пара</th><th class="n">Точн.</th><th class="n">Ложн. движ.</th><th class="n">Ложн. 3-й</th><th></th></tr></thead><tbody id="e-pairs"></tbody></table>
+  <div class="muted" style="margin-top:6px">Калибруется пара брови (ВПЕРЁД) + челюсть (НАЗАД), жесты идут вперемешку; в конце — проверка из 6 жестов.</div>
 </div>
 
-<div class="card">
+<div class="card" data-tabs="ectl">
   <div style="font-weight:600;margin-bottom:8px">Настройки</div>
   <div class="grid2">
-    <div><label>Толчок вперёд/назад, мс</label><input id="pulse" type="number" min="200" max="5000" step="100"></div>
-    <div><label>Удержание жеста, мс</label><input id="hold" type="number" min="0" max="600" step="50"></div>
-    <div><label>Порог отказа (меньше — строже)</label><input id="rej" type="number" min="0.5" max="4" step="0.1"></div>
+    <div><label>Толчок вперёд/назад, мс</label><input id="e-pulse" type="number" min="200" max="5000" step="100"></div>
+    <div><label>Удержание жеста, мс</label><input id="e-hold" type="number" min="0" max="600" step="50"></div>
+    <div><label>Порог отказа (меньше — строже)</label><input id="e-rej" type="number" min="0.5" max="4" step="0.1"></div>
   </div>
-  <div class="row" style="margin-top:8px"><button id="bset">Сохранить</button></div>
+  <div class="row" style="margin-top:8px"><button id="e-bset">Сохранить</button></div>
   <div style="font-weight:600;margin:14px 0 8px">Проверка пульта (CH7)</div>
   <div class="row"><button data-t="1000">1000 назад</button><button data-t="1500">1500 центр</button><button data-t="2000">2000 вперёд</button></div>
-  <div class="row" style="margin-top:14px"><button class="danger" id="bforget">Стереть профиль</button><button id="bwifi">Отключиться</button></div>
+  <div class="row" style="margin-top:14px"><button class="danger" id="e-bforget">Стереть профиль</button><button id="e-bwifi">Отключиться</button></div>
 </div>
 
-<div class="card"><div style="font-weight:600;margin-bottom:6px">Журнал</div><pre id="log"></pre></div>
+<div class="card"><div style="font-weight:600;margin-bottom:6px">Журнал платы</div><pre class="log" id="e-log"></pre></div>
+</section>
+
+<!-- ===================== ЭЭГ: прошивка neuro_feedback (тренировка показателя) ===================== -->
+<section id="eeg">
+<div class="card warnbox off" id="t-mismatch"></div>
+<div class="card">
+  <div id="t-trkWrap" style="display:none"><canvas id="t-trk"></canvas><div id="t-trkInfo" class="muted"></div></div>
+  <div id="t-phase" class="p-idle"><div class="t" id="t-phT">—</div><div class="task" id="t-phTask"></div><div class="s" id="t-phS">Выбери цель и нажми «Начать сессию»</div></div>
+  <div class="mcap" id="t-mcap"></div>
+  <div class="meter" id="t-meter"><i id="t-mbar"></i><span class="base" id="t-mbase" style="display:none"></span><span class="thr" id="t-mthr" style="display:none"></span><span class="thrlo" id="t-mthrlo" style="display:none"></span><b id="t-mval">—</b></div>
+  <div id="t-why" class="muted"></div>
+  <div class="streak" id="t-streak"></div>
+  <div class="row" style="margin-top:12px">
+    <button class="primary big" id="t-bstart" data-tabs="ttrain">Начать сессию</button>
+    <button class="big" id="t-bfree" data-tabs="ttrain">Свободная тренировка</button>
+    <button class="primary big" id="t-bcheck" data-tabs="tcal">Проверка гарнитуры (2,5 мин)</button>
+    <button class="danger big" id="t-bstop" style="display:none">Остановить</button>
+    <button id="t-bsound" aria-pressed="false">Звук: выкл</button>
+  </div>
+</div>
+
+<div class="card" id="t-checkCard" data-tabs="tcal">
+  <h2>Проверка гарнитуры</h2>
+  <div id="t-checkRes" class="muted">Видит ли плата альфа-ритм: 1 мин замер с открытыми глазами, потом 4 блока по 20 с — глаза открыты / закрыты. Если разницы нет — сигнал не мозговой (плохой контакт или помехи), тренироваться бессмысленно.</div>
+</div>
+
+<div class="card" data-tabs="ttrain">
+  <h2>Сессия</h2>
+  <div class="grid">
+    <div><label>Режим</label><select id="t-nfmode"><option value="bi">ВВЕРХ и ВНИЗ, следя за точкой (для управления)</option><option value="up">Только поднимать, без слежения (старый)</option></select></div>
+    <div><label>Цель</label><select id="t-target"><option value="MED">Медитация (чип гарнитуры)</option><option value="ATT">Внимание (чип гарнитуры)</option><option value="ALPHA">Альфа-ритм (свой прибор)</option><option value="FOCUS">Бета/(тета+альфа) (свой прибор)</option></select></div>
+    <div><label>Точка (ступень)</label><select id="t-trkStage"><option value="1">1 — стоит в центре</option><option value="2">2 — медленно плывёт</option><option value="3">3 — быстрее</option><option value="4">4 — быстро и непредсказуемо</option></select></div>
+    <div><label>Попыток в сессии</label><input id="t-trials" type="number" min="1" max="40" step="1"></div>
+    <div><label>Пауза между командами, с (ВВЕРХ/ВНИЗ)</label><input id="t-rest" type="number" min="5" max="60" step="1"></div>
+  </div>
+  <div class="row" style="margin-top:10px"><button id="t-bset2">Сохранить настройки</button></div>
+  <div class="muted" style="margin-top:8px;display:none" id="t-howto"></div>
+</div>
+
+<div class="card" data-tabs="tcal">
+  <h2>Пороги и помехи</h2>
+  <div class="grid">
+    <div><label>Порог над фоном, σ фона</label><input id="t-thr" type="number" min="0.2" max="3" step="0.1"></div>
+    <div><label>Удержание для успеха, с</label><input id="t-hold" type="number" min="1" max="10" step="1"></div>
+    <div><label>Порог мышц × фон</label><input id="t-emgk" type="number" min="1.2" max="10" step="0.1"></div>
+    <div><label>Порог глаз × фон</label><input id="t-eyek" type="number" min="1.2" max="10" step="0.1"></div>
+    <div><label>После мышц грязно, с</label><input id="t-gemg" type="number" min="0" max="5" step="1"></div>
+    <div><label>После глаз грязно, с</label><input id="t-geye" type="number" min="0" max="5" step="1"></div>
+  </div>
+  <div class="row" style="margin-top:10px"><button id="t-bset">Сохранить настройки</button></div>
+  <div class="muted" style="margin-top:8px">Секунды, где мышцы лица или глаза дают всплеск выше «порог × фон», не засчитываются. Меньше порог — строже отбраковка.</div>
+</div>
+
+<div class="card" data-tabs="ttrain tcal">
+  <h2>Последние 2 минуты</h2>
+  <canvas id="t-live" height="180"></canvas>
+  <div class="muted" id="t-liveLegend">Линия — показатель (серые участки — секунды с помехами, не засчитываются). Чёрный пунктир — верхний порог, оранжевый — нижний (ВНИЗ). Голубой фон — ВВЕРХ или «старайся», оранжевый — ВНИЗ.</div>
+</div>
+
+<div class="card" id="t-sessCard" style="display:none" data-tabs="ttrain">
+  <h2>Текущая сессия <span class="muted" id="t-sessId"></span></h2>
+  <div class="kv" id="t-sessKv"></div>
+  <div style="overflow-x:auto"><table style="margin-top:10px"><thead><tr><th>Попытка</th><th></th><th class="n" id="t-thUp">Старался</th><th class="n" id="t-thRest">Ничего не делал</th><th class="n">Разница</th><th class="n">Чистых</th><th class="n">Помехи м/г</th><th class="n" id="t-thTrk">Слежение</th><th class="n" id="t-thOth">Второй, сдвиг</th></tr></thead><tbody id="t-trialsT"></tbody></table></div>
+  <div class="row" style="margin-top:10px"><button id="t-bcsv">Скачать CSV сессии</button></div>
+</div>
+
+<div class="card" data-tabs="ttrain">
+  <h2>Кривая обучения</h2>
+  <div class="row"><label style="margin:0">Цель:</label><select id="t-histTarget" style="width:auto"></select></div>
+  <canvas id="t-curve" height="200" style="margin-top:8px"></canvas>
+  <div class="muted">Столбики — доля успешных попыток в сессии. Точки и линия — средняя разница «когда старался» минус «когда ничего не делал» (правая шкала, пункты). Растёт разница → учишься управлять.</div>
+  <table style="margin-top:10px"><thead><tr><th>Дата</th><th>Цель</th><th class="n">Успех</th><th class="n">Разница</th><th class="n">d</th><th class="n">Чистых</th><th></th></tr></thead><tbody id="t-histT"></tbody></table>
+  <div class="row" style="margin-top:10px"><button id="t-bhcsv">Скачать все итоги (CSV)</button><button class="danger" id="t-bhclear">Очистить историю</button></div>
+  <div class="muted" style="margin-top:6px">История хранится в этом браузере на этом устройстве. Надёжная копия — CSV или tools/nf_logger.py на компьютере.</div>
+</div>
+
+<div class="card"><h2>Журнал платы</h2><pre class="log" id="t-log"></pre><div class="row" style="margin-top:8px"><button id="t-bstate">Состояние (P)</button><button id="t-bdisc">Отключиться</button></div></div>
+<div class="tip" id="t-tip"></div>
+</section>
 </main>
 <script>
-const $=id=>document.getElementById(id);
+// ===================== общая часть: связь с платой по BLE (Nordic UART) и вкладки =====================
+const SVC='6e400001-b5a3-f393-e0a9-e50e24dcca9e',RXC='6e400002-b5a3-f393-e0a9-e50e24dcca9e',TXC='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+const BLE={dev:null,chRx:null,inbuf:'',wq:Promise.resolve(),userDisc:false,linked:false,kind:null,autoTab:false,pend:[]};
+const g$=id=>document.getElementById(id);
+const bdec=new TextDecoder(),benc=new TextEncoder();
+const KIND_NAME={np:'neuro_pilot (ЭМГ: жесты → пульт)',nf:'neuro_feedback (ЭЭГ-тренировка)'};
+const CONN_HINT='Включи Bluetooth на телефоне и нажми кнопку. В списке выбери NeuroPilot или NeuroTrain (телефон может помнить старое имя — выбирай любую). Страница сама поймёт, какая прошивка залита: вкладки ЭМГ работают с neuro_pilot, ЭЭГ — с neuro_feedback.';
+function connUi(txt,btn){g$('conntxt').textContent=txt;g$('bconn').style.display=btn?'':'none';g$('conncard').style.display=BLE.linked?'none':''}
+function cmd(c){BLE.wq=BLE.wq.then(async()=>{if(!BLE.chRx)return;try{await BLE.chRx.writeValueWithResponse(benc.encode(c))}catch(e){}});return BLE.wq}
+async function bleConnect(){
+ if(!navigator.bluetooth){connUi('Этот браузер не умеет Bluetooth. Нужен Chrome на Android (или на компьютере), страница по https.',false);return}
+ try{BLE.dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'},{namePrefix:'NeuroTrain'},{services:[SVC]}],optionalServices:[SVC]});
+  BLE.dev.addEventListener('gattserverdisconnected',bleOnDisc);BLE.userDisc=true;
+  try{for(let i=1;;i++){try{await gattUp();break}catch(e){try{BLE.dev.gatt.disconnect()}catch(_){}if(i>=5)throw e;
+   connUi('Не подключилось ('+e.message+'), попытка '+(i+1)+' из 5… Плата может быть занята поиском гарнитуры.',false);await new Promise(r=>setTimeout(r,3000))}}}
+  finally{BLE.userDisc=false}}
+ catch(e){connUi('Не подключилось: '+e.message,true)}}
+async function gattUp(){connUi('Подключаюсь…',false);const srv=await BLE.dev.gatt.connect(),s=await srv.getPrimaryService(SVC);
+ BLE.chRx=await s.getCharacteristic(RXC);const tx=await s.getCharacteristic(TXC);
+ tx.addEventListener('characteristicvaluechanged',e=>bleOnData(e.target.value));await tx.startNotifications();
+ BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.pend=[];BLE.autoTab=true;BLE.linked=true;g$('fw').textContent='';connUi('',false);tabsUi();
+ setTimeout(()=>{if(BLE.linked&&!BLE.kind)cmd('P')},2500);
+ setTimeout(()=>{if(BLE.linked&&!BLE.kind){const p=BLE.pend.splice(0);p.forEach(l=>{EMG.onLine(l);EEG.onLine(l)})}},6000)}   // старые прошивки шлют заголовок только при подключении — на всякий случай попросим состояние
+function bleOnDisc(){BLE.linked=false;BLE.chRx=null;g$('chips').innerHTML=chip0('Плата: нет связи','bad');EEG.onDisc();tabsUi();
+ if(BLE.userDisc)return;connUi(BLE.switching?'Плата перезагружается в новый режим — переподключаюсь сама, это ~10 с…':'Связь с платой потеряна — переподключаюсь…',true);
+ setTimeout(async()=>{if(BLE.linked||!BLE.dev)return;try{await gattUp()}catch(e){bleOnDisc()}},2000)}
+function bleDisconnect(){BLE.userDisc=true;if(BLE.dev&&BLE.dev.gatt.connected)BLE.dev.gatt.disconnect();BLE.linked=false;BLE.chRx=null;
+ connUi('Отключено. Нажми, чтобы подключиться снова.',true);EEG.onDisc();g$('chips').innerHTML=chip0('Плата: отключена','');tabsUi();BLE.userDisc=false}
+function bleOnData(dv){BLE.inbuf+=bdec.decode(dv,{stream:true});let i;
+ while((i=BLE.inbuf.indexOf('\n'))>=0){const l=BLE.inbuf.slice(0,i).replace(/\r$/,'');BLE.inbuf=BLE.inbuf.slice(i+1);if(l)route(l)}}
+// какая прошивка на плате: neuro_pilot шлёт H{...} и S с полем ch7; neuro_feedback шлёт S с fw "nf …"
+function route(line){const k=line[0];
+ if(k==='H'){let h={};try{h=JSON.parse(line.slice(1))}catch(e){}BLE.modes=!!h.modes;setKind(h.mode==='eeg'?'nf':'np')}   // общая прошивка neuro_combo сообщает режим
+ else if(k==='S'){try{const j=JSON.parse(line.slice(1));if(j.fw&&/^nf/i.test(j.fw))setKind('nf');else if('ch7' in j||'mode_ru' in j&&'cal_nsteps' in j)setKind('np')}catch(e){}}
+ if(!BLE.kind){if(k==='L')BLE.pend.push(line);return}   // строки журнала до того, как стало ясно, какая прошивка, — отдадим потом
+ (BLE.kind==='np'?EMG:EEG).onLine(line)}
+function setKind(k){if(BLE.kind===k)return;BLE.kind=k;const app=k==='np'?EMG:EEG;BLE.pend.splice(0).forEach(l=>app.onLine(l));
+ if(BLE.autoTab){BLE.autoTab=false;if(TAB_KIND[curTab]!==k)showTab(lastTab[k])}
+ tabsUi()}
+// ---------- вкладки ----------
+const TAB_KIND={ecal:'np',ectl:'np',ttrain:'nf',tcal:'nf'};
+let curTab='ecal',lastTab={np:'ecal',nf:'ttrain'};
+try{const t=localStorage.getItem('np_tab');if(t in TAB_KIND)curTab=t;const lt=JSON.parse(localStorage.getItem('np_lasttab')||'null');if(lt&&lt.np in TAB_KIND&&lt.nf in TAB_KIND)lastTab=lt}catch(e){}
+function showTab(t){curTab=t;lastTab[TAB_KIND[t]]=t;try{localStorage.setItem('np_tab',t);localStorage.setItem('np_lasttab',JSON.stringify(lastTab))}catch(e){}tabsUi();
+ if(TAB_KIND[t]==='nf')EEG.redraw()}
+function tabsUi(){const side=TAB_KIND[curTab];
+ document.querySelectorAll('#tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.tab===curTab);b.classList.toggle('na',!!BLE.kind&&TAB_KIND[b.dataset.tab]!==BLE.kind)});
+ g$('emg').classList.toggle('off',side!=='np');g$('eeg').classList.toggle('off',side!=='nf');
+ document.querySelectorAll('[data-tabs]').forEach(el=>el.classList.toggle('off',!el.dataset.tabs.split(' ').includes(curTab)));
+ const mm=BLE.kind&&BLE.kind!==side,box=g$(side==='np'?'e-mismatch':'t-mismatch');
+ g$('e-mismatch').classList.add('off');g$('t-mismatch').classList.add('off');g$('emg').classList.toggle('mm',!!mm&&side==='np');g$('eeg').classList.toggle('mm',!!mm&&side==='nf');
+ if(mm){box.classList.remove('off');const want=side==='np'?'ЭМГ':'ЭЭГ',cur=BLE.kind==='np'?'ЭМГ':'ЭЭГ';
+  box.innerHTML=BLE.modes?
+   `<b>Плата сейчас в режиме ${cur}.</b> Эта вкладка — режим ${want}. Переключение перезагрузит плату (~10 с), страница переподключится сама. Во время калибровки или сессии плата откажет — сначала «Остановить».`+
+   `<div class="row" style="margin-top:10px"><button class="primary" onclick="switchMode('${side}')">Переключить плату в ${want}</button><button onclick="showTab(lastTab['${BLE.kind}'])">Вернуться в ${cur}</button></div>`:
+   `<b>На плате другая прошивка.</b> Сейчас залита ${KIND_NAME[BLE.kind]}. Эта вкладка работает с прошивкой <b>${side==='np'?'firmware/neuro_pilot':'firmware/neuro_feedback'}</b> (или общей <b>firmware/neuro_combo</b>) — залей её и подключись снова. Или перейди на вкладку `+
+  `<button style="min-height:32px;padding:4px 10px" onclick="showTab(lastTab['${BLE.kind}'])">${BLE.kind==='np'?'ЭМГ':'ЭЭГ'}</button>`}}
+function switchMode(side){if(!BLE.linked)return;BLE.switching=true;cmd('MODE '+(side==='nf'?'EEG':'EMG'));
+ const box=g$(side==='np'?'e-mismatch':'t-mismatch');box.innerHTML='Переключаю режим… Если плата ответила «сначала STOP» (см. журнал на другой вкладке) — останови калибровку или сессию и нажми ещё раз.';
+ setTimeout(()=>{if(BLE.linked&&BLE.kind!==side){BLE.switching=false;tabsUi()}},6000)}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+function chip0(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
+g$('bconn').onclick=()=>{EMG.gesture();EEG.gesture();bleConnect()};
+</script>
+<script>
+// ===================== ЭМГ: страница калибровки и управления (прошивка neuro_pilot) =====================
+const EMG=(()=>{
+const SH=new Set(['fw','chips','conncard','conntxt','bconn']);const $=id=>document.getElementById(SH.has(id)?id:'e-'+id);
 let audio=null,lastCue=-1,logSeq=0,st=null,armed=true;
 function tone(f,ms,when=0,type='sine',vol=.25){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;
  const t=audio.currentTime+when;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.linearRampToValueAtTime(0,t+ms/1000);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+ms/1000+.02)}
@@ -103,36 +304,14 @@ function play(kind,text){
  else if(kind==='fail'||kind==='safe'){tone(220,500,0,'square',.15);tone(180,500,.55,'square',.15);if(navigator.vibrate)navigator.vibrate([500,200,500])}
  else if(kind==='rest'){tone(440,600)}}
 $('bsound').onclick=()=>{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume();tone(1000,120);$('bsound').textContent='Звук включён'};
-// --- связь с платой по Bluetooth LE (сервис Nordic UART) ---
-const SVC='6e400001-b5a3-f393-e0a9-e50e24dcca9e',RXC='6e400002-b5a3-f393-e0a9-e50e24dcca9e',TXC='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-let dev=null,chRx=null,inbuf='',linked=false,fw='',pairsCache=[],wq=Promise.resolve(),userDisc=false;
-const dec=new TextDecoder(),enc=new TextEncoder();
-function connUi(txt,showBtn){$('conntxt').textContent=txt;$('bconn').style.display=showBtn?'':'none';$('conncard').style.display=linked?'none':''}
-async function bleConnect(){userDisc=false;
- if(!navigator.bluetooth){connUi('Этот браузер не умеет Bluetooth. Нужен Chrome на Android (или на компьютере), страница по https.',false);return}
- try{dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'NeuroPilot'},{namePrefix:'NeuroTrain'},{services:[SVC]}],optionalServices:[SVC]});
-  dev.addEventListener('gattserverdisconnected',onDisc);await gattUp()}
- catch(e){connUi('Не подключилось: '+e.message,true)}}
-async function gattUp(){
- connUi('Подключаюсь…',false);
- const srv=await dev.gatt.connect(),s=await srv.getPrimaryService(SVC);
- chRx=await s.getCharacteristic(RXC);const tx=await s.getCharacteristic(TXC);
- tx.addEventListener('characteristicvaluechanged',e=>onData(e.target.value));await tx.startNotifications();
- inbuf='';linked=true;connUi('',false)}
-function onDisc(){linked=false;chRx=null;$('chips').innerHTML=chip('Плата: нет связи','bad');
- if(userDisc)return;connUi('Связь с платой потеряна — переподключаюсь…',true);
- setTimeout(async()=>{if(linked||!dev)return;try{await gattUp()}catch(e){onDisc()}},2000)}
-function onData(dv){inbuf+=dec.decode(dv,{stream:true});let i;
- while((i=inbuf.indexOf('\n'))>=0){const line=inbuf.slice(0,i);inbuf=inbuf.slice(i+1);if(line)onLine(line)}}
+let fw='',pairsCache=[];
 function onLine(line){const k=line[0],v=line.slice(1);
  try{if(k==='S'){const s=JSON.parse(v);s.fw=fw;s.pairs=pairsCache;render(s)}
-  else if(k==='H'){const h=JSON.parse(v);fw=h.fw;$('fw').textContent=fw;if(/^nf/i.test(fw||'')){userDisc=true;linked=false;try{dev.gatt.disconnect()}catch(e){}connUi('На плате прошивка тренировки NeuroTrain ('+fw+'). Для калибровки и управления залей firmware/neuro_pilot.',true);return}}
+  else if(k==='H'){const h=JSON.parse(v);fw=h.fw;$('fw').textContent=fw}
   else if(k==='P'){pairsCache=JSON.parse(v);if(st){st.pairs=pairsCache;render(st)}}
   else if(k==='L'){const el=$('log');const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-8;
    el.textContent+=v+'\n';if(el.textContent.length>20000)el.textContent=el.textContent.slice(-15000);if(atBottom)el.scrollTop=el.scrollHeight}}
  catch(e){console.log('плохая строка',line)}}
-function cmd(c){wq=wq.then(async()=>{if(!chRx)return;try{await chRx.writeValueWithResponse(enc.encode(c))}catch(e){}});return wq}
-$('bconn').onclick=()=>{if(!audio)$('bsound').click();bleConnect()};
 $('bcal').onclick=()=>{if(!audio)$('bsound').click();cmd('CAL')};
 $('bstop').onclick=()=>{if(confirm('Остановить калибровку? Вернётся прежний профиль (если он был).'))cmd('STOP')};
 // --- сигнал калибровки: страница знает заранее, когда он будет, и сама включает красный экран точно в момент ---
@@ -154,7 +333,7 @@ function cueSync(s){
  cueDraw();return true}
 $('barm').onclick=()=>cmd(armed?'DISARM':'ARM');
 $('bforget').onclick=()=>{if(confirm('Стереть сохранённый профиль пилота?'))cmd('FORGET')};
-$('bwifi').onclick=()=>{userDisc=true;if(dev&&dev.gatt.connected)dev.gatt.disconnect();linked=false;connUi('Отключено. Нажми, чтобы подключиться снова.',true);userDisc=false};
+$('bwifi').onclick=()=>bleDisconnect();
 $('bset').onclick=()=>{cmd('PULSE '+$('pulse').value);cmd('HOLD '+$('hold').value);cmd('REJ '+$('rej').value)};
 document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>cmd('T'+b.dataset.t));
 const NAME={0:'Брови',1:'Челюсть',2:'Зажмуривание'},EN={0:'BROWS',1:'JAW',2:'SQUEEZE'};
@@ -187,7 +366,288 @@ function render(s){
    `<td>${cur?'<span class="tag g">выбрана</span>':p.valid?`<button onclick="cmd('PAIR ${EN[p.a]} ${EN[p.b]}')">Выбрать</button>`:''}${p.valid&&!p.ok?' <span class="tag r">слабая</span>':''}</td></tr>`}).join('')}
  else $('pairsCard').style.display='none';
 }
-connUi('Включи Bluetooth на телефоне и нажми кнопку. В списке выбери NeuroPilot.',true);
+return {onLine,gesture:()=>{if(!audio)$('bsound').click()}};
+})();
+</script>
+<script>
+// ===================== ЭЭГ: тренировка и проверка гарнитуры (прошивка neuro_feedback) =====================
+const EEG=(()=>{
+const SH=new Set(['fw','chips','conncard','conntxt','bconn']);const $=id=>document.getElementById(SH.has(id)?id:'t-'+id);
+const sg=v=>v==null||isNaN(v)?'—':(v>=0?'+':'')+(+v).toFixed(1),f2=v=>v==null||isNaN(v)?'—':(+v).toFixed(2);
+const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TASK={
+ MED:{intro:'Сначала 1 минуту просто сиди — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд ничего не делаешь, потом 15 секунд расслабляешься (на экране будет РАССЛАБЬСЯ). Цель: пока расслабляешься, полоса должна уйти за чёрную черту и продержаться там 3 секунды.',past:'Расслаблялся',up:'РАССЛАБЬСЯ',upT:'Медленно выдыхай. Расслабь лоб, челюсть, плечи. Можно закрыть глаза и слушать звук: чем выше тон — тем лучше.',
+  rest:'ОТДЫХ',restT:'Ничего не делай, просто сиди с открытыми глазами. Не старайся.',what:'медитация (MED)',verb:'ещё расслабься'},
+ ATT:{intro:'Сначала 1 минуту просто сиди — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд ничего не делаешь, потом 15 секунд считаешь в уме 100, 93, 86… (на экране будет СОСРЕДОТОЧЬСЯ). Цель: пока считаешь, полоса должна уйти за чёрную черту и продержаться там 3 секунды.',past:'Считал',up:'СОСРЕДОТОЧЬСЯ',upT:'Считай в уме: 100, 93, 86… (каждый раз минус 7). Смотри в одну точку. Не хмурься и не щурься — это не засчитывается.',
+  rest:'ОТДЫХ',restT:'Брось счёт, просто сиди. Не старайся.',what:'внимание (ATT)',verb:'сосредоточься сильнее'},
+ ALPHA:{intro:'Сначала 1 минуту просто сиди с открытыми глазами — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд с открытыми глазами, потом 15 секунд с закрытыми (на экране будет ЗАКРОЙ ГЛАЗА, потом прозвучит сигнал). Цель: с закрытыми глазами полоса должна уйти за чёрную черту и продержаться 3 секунды.',past:'Глаза закрыты',up:'ЗАКРОЙ ГЛАЗА',upT:'Закрой глаза, расслабься, ни о чём не думай. Слушай звук: чем выше тон — тем лучше.',
+  rest:'ОТКРОЙ ГЛАЗА',pastRest:'Глаза открыты',restT:'Открой глаза, смотри в одну точку, просто сиди.',what:'альфа-ритм',verb:'расслабься глубже'},
+ FOCUS:{intro:'Сначала 1 минуту просто сиди — плата запомнит твой обычный уровень. Потом 10 раз подряд: 10 секунд ничего не делаешь, потом 15 секунд считаешь в уме 100 минус 7, минус 7… (на экране будет СЧИТАЙ В УМЕ). Цель: пока считаешь, полоса должна уйти за чёрную черту и продержаться 3 секунды.',past:'Считал',up:'СЧИТАЙ В УМЕ',upT:'100 минус 7, минус 7… Держи взгляд на точке, лицо расслаблено (мышцы лба не засчитываются).',
+  rest:'ОТДЫХ',restT:'Брось счёт, просто сиди.',what:'бета/(тета+альфа)',verb:'сосредоточься сильнее'}};
+const TNAME={ATT:'Внимание',MED:'Медитация',ALPHA:'Альфа',FOCUS:'Бета/(тета+альфа)'};
+// Режим ВВЕРХ/ВНИЗ: глаза всё время на точке. Команду дают цвет рамки и звук, а не текст.
+const BI={
+ MED:{up:'Не отводя глаз от точки: медленный выдох, отпусти лоб, челюсть и плечи, следи мягко.',dn:'Не отводя глаз от точки: считай в уме 100 − 7 − 7… или представь, что опаздываешь. Лицо не напрягай.'},
+ ATT:{up:'Не отводя глаз от точки: считай в уме 100 − 7 − 7…, держи счёт плотно.',dn:'Не отводя глаз от точки: брось счёт, отпусти мысли, следи расслабленно.'},
+ ALPHA:{up:'Не отводя глаз от точки: расслабься, медленный выдох, смотри мягко.',dn:'Не отводя глаз от точки: считай в уме 100 − 7 − 7…, лови каждое движение точки.'},
+ FOCUS:{up:'Не отводя глаз от точки: считай в уме 100 − 7 − 7…',dn:'Не отводя глаз от точки: брось счёт, расслабься.'}};
+const BI_INTRO='Глаза всё время на точке. Сначала 1 минуту просто следи (серая пунктирная рамка) — плата запомнит твой обычный уровень при слежении. Потом попытки: пауза (по умолчанию 20 с) — просто следишь (серая сплошная рамка), затем 15 с — СИНЯЯ рамка и звук вверх: подними показатель; ОРАНЖЕВАЯ рамка и звук вниз: опусти. Когда точка покраснеет — коснись экрана, на это есть 2,5 с; на смену цвета рамки и на моргания не нажимай. Полосы во время сессии нет — смотри только на точку. Зелёное свечение рамки — ты в нужной зоне. Звук: выше тон — выше показатель.';
+const OTHER={MED:'ATT',ATT:'MED',ALPHA:'FOCUS',FOCUS:'ALPHA'};
+const HOWTO={
+ MED:'Медитация: когда на экране РАССЛАБЬСЯ — расслабься — медленный выдох, расслабь лоб, челюсть, плечи; можно закрыть глаза и слушать звук (выше тон — выше показатель). Когда на экране ОТДЫХ — просто сиди, ничего не делай.',
+ ATT:'Внимание: когда на экране СОСРЕДОТОЧЬСЯ — сосредоточься — считай в уме (100 − 7 − 7…), держи взгляд на одной точке, не щурься и не хмурься (мышцы отбраковываются). Когда на экране ОТДЫХ — брось счёт и просто сиди.',
+ ALPHA:'Альфа-ритм: лучше всего поднимается при закрытых глазах и расслаблении. Ориентируйся на звук. 50 — твой фон, 65 — на 1 стандартное отклонение выше фона.',
+ FOCUS:'Бета/(тета+альфа): пробуй устный счёт и сосредоточение. Осторожно: мышцы лба тоже поднимают бету — такие секунды отбраковываются.'};
+let audio=null,osc=null,gain=null,soundOn=false,st=null,sess=null,live=[],fw='';
+// ---------------- звук ----------------
+function tone(f,ms,when=0,vol=.22,type='sine'){if(!audio||!soundOn)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;const t=audio.currentTime+when;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.linearRampToValueAtTime(0,t+ms/1000);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+ms/1000+.02)}
+function fbTone(on,f){if(!audio)return;if(!soundOn)on=false;if(!osc){osc=audio.createOscillator();gain=audio.createGain();osc.type='sine';gain.gain.value=0;osc.connect(gain).connect(audio.destination);osc.start()}
+ const t=audio.currentTime;osc.frequency.setTargetAtTime(f||300,t,.15);gain.gain.setTargetAtTime(on?.10:0,t,.2)}
+// звук включается и выключается кнопкой; выбор запоминается в этом браузере
+function setSound(on){soundOn=on;
+ if(on){audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume();tone(880,120)}
+ else if(gain&&audio)gain.gain.setTargetAtTime(0,audio.currentTime,.05);
+ const b=$('bsound');b.textContent=on?'Звук: вкл':'Звук: выкл';b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('primary',on);
+ try{localStorage.setItem('neurotrain_sound',on?'1':'0')}catch(e){}}
+$('bsound').onclick=()=>setSound(!soundOn);
+// браузер разрешает звук только после нажатия — включаем при первом нажатии любой кнопки, если пользователь не выключал
+function soundAuto(){let pref='1';try{pref=localStorage.getItem('neurotrain_sound')??'1'}catch(e){}if(pref==='1'&&!soundOn)setSound(true)}
+// ---------------- слежение за точкой ----------------
+// Точка движется по экрану; иногда краснеет (до 1,5 с, гаснет после касания) — надо коснуться экрана в течение 2,5 с. Попадания считаются по попыткам.
+// Во время сессии полоса и надписи скрыты: глаза только на точке, обратная связь — звук и свечение рамки.
+const TRK_RED=1500,TRK_WIN=2500;
+let trk={on:false,raf:0,t0:0,next:0,ev:null,events:[],taps:0,false:0,cur:{tr:0,ph:''},stage:1};
+try{trk.stage=+(localStorage.getItem('neurotrain_stage')||1)||1}catch(e){}
+function trkPos(t,w,h){const g=trk.stage,mx=w/2,my=h/2,ax=w*.40,ay=h*.38;
+ if(g<=1)return [mx,my];
+ if(g===2)return [mx+ax*Math.sin(.35*t),my+ay*Math.sin(.5*t+.7)];
+ if(g===3)return [mx+ax*Math.sin(.7*t),my+ay*Math.sin(1.0*t+.7)];
+ return [mx+ax*(.6*Math.sin(.9*t)+.4*Math.sin(1.73*t+1.1)),my+ay*(.6*Math.sin(1.37*t+.4)+.4*Math.sin(2.11*t+2))]}
+function trkStart(){if(trk.on)return;trk.on=true;document.body.classList.add('trkmode');trk.t0=performance.now();trk.next=trk.t0+3000+Math.random()*4000;trk.ev=null;trk.events=[];trk.taps=0;trk.false=0;$('trkWrap').style.display='';trkLoop()}
+function trkStop(){trk.on=false;document.body.classList.remove('trkmode');cancelAnimationFrame(trk.raf);$('trkWrap').style.display='none'}
+function trkLoop(){if(!trk.on)return;const c=$('trk'),r=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+ if(c.width!==Math.round(w*r)||c.height!==Math.round(h*r)){c.width=Math.round(w*r);c.height=Math.round(h*r)}
+ const x=c.getContext('2d');x.setTransform(r,0,0,r,0,0);x.clearRect(0,0,w,h);const now=performance.now(),t=(now-trk.t0)/1000;
+ if(!trk.ev&&now>=trk.next){trk.ev={t:now,tr:trk.cur.tr,ph:trk.cur.ph,hit:false};trk.events.push(trk.ev)}
+ if(trk.ev&&now-trk.ev.t>TRK_WIN){trk.ev=null;trk.next=now+4000+Math.random()*5000;trkInfo()}
+ const red=trk.ev&&!trk.ev.hit&&now-trk.ev.t<TRK_RED,[px,py]=trkPos(t,w,h);
+ x.beginPath();x.arc(px,py,red?13:11,0,7);x.fillStyle=red?css('--red'):css('--ink');x.fill();
+ x.beginPath();x.arc(px,py,3,0,7);x.fillStyle=css('--card');x.fill();
+ trk.raf=requestAnimationFrame(trkLoop)}
+function trkTap(e){e.preventDefault();if(!trk.on)return;trk.taps++;if(trk.ev&&!trk.ev.hit&&performance.now()-trk.ev.t<=TRK_WIN){trk.ev.hit=true;tone(1500,40,0,.08)}else trk.false++;trkInfo()}
+$('trk').addEventListener('pointerdown',trkTap);
+function trkStats(tr){const done=trk.events.filter(e=>(tr==null||e.tr===tr)&&e!==trk.ev);return {n:done.length,hit:done.filter(e=>e.hit).length}}
+function trkInfo(){const a=trkStats(null),pt=st&&st.trial?`попытка ${st.trial}/${st.trials} · `:'';$('trkInfo').textContent=pt+(a.n?`поймано ${a.hit} из ${a.n} миганий${trk.false?` · лишних касаний ${trk.false}`:''}`:'точка покраснеет — коснись экрана (на это 2,5 с)')}
+$('trkStage').onchange=()=>{trk.stage=+$('trkStage').value;try{localStorage.setItem('neurotrain_stage',trk.stage)}catch(e){}};
+function onLine(line){const k=line[0],v=line.slice(1);let j=null;
+ try{if(k!=='L')j=JSON.parse(v)}catch(e){console.log('плохая строка',line);return}
+ if(k==='S'){st=j;fw=j.fw;$('fw').textContent=fw;renderState()}
+ else if(k==='N')onNew(j);else if(k==='D')onSec(j);else if(k==='B')onBase(j);else if(k==='R')onTrial(j);else if(k==='Y')onSummary(j);
+ else if(k==='L')logLine(v)}
+function logLine(v){const el=$('log'),bottom=el.scrollTop+el.clientHeight>=el.scrollHeight-8;el.textContent+=v+'\n';if(el.textContent.length>20000)el.textContent=el.textContent.slice(-15000);if(bottom)el.scrollTop=el.scrollHeight}
+// ---------------- сессия ----------------
+function onNew(j){if(checkMode)j.check=true;if(j.bi)j.stage=trk.stage;sess={meta:j,started:new Date().toISOString(),secs:[],base:null,trials:[],summary:null};live=[];
+ trkStop();if(j.bi){trkStart();trkInfo()}renderSess();drawLive()}
+function onBase(j){if(sess){sess.base=j;renderSess()}}
+function onTrial(j){if(sess){if(sess.meta.bi){const a=trkStats(j.trial);j.trk_n=a.n;j.trk_hit=a.hit}sess.trials.push(j);renderSess();if(j.ok)tone(1320,160)}}
+function onSummary(j){if(!sess)return;if(sess.meta&&sess.meta.check){sess=null;renderSess();return}
+ if(sess.meta.bi){const a=trkStats(null);j.trk_n=a.n;j.trk_hit=a.hit;j.trk_false=trk.false;j.stage=sess.meta.stage;Object.assign(j,validD(sess))}trkStop();sess.summary=j;renderSess();saveHist(sess);renderHist();[660,880,1100].forEach((f,i)=>tone(f,160,i*.17));fbTone(false)}
+let lastPh='',lastOk=0,lastStreak=0;
+// ---------- проверка гарнитуры: видит ли плата альфа-ритм (он сам растёт при закрытых глазах) ----------
+// фон 60 с (глаза открыты) → 4 блока по 20 с: открыты / закрыты / открыты / закрыты. Сравниваем долю альфы.
+const CHK=[['open',20],['closed',20],['open',20],['closed',20]],CHK_SKIP=4;
+let checkMode=false,chk=null;
+function chkBlock(i){let t=0;for(let k=0;k<CHK.length;k++){if(i<t+CHK[k][1])return {k,kind:CHK[k][0],sec:i-t,left:t+CHK[k][1]-i};t+=CHK[k][1]}return null}
+function checkStart(){checkMode=true;chk={i:0,open:[],closed:[],lastKind:'',t0:Date.now()};$('checkCard').style.display='';$('checkRes').textContent='Идёт проверка…';cmd('NF FREE MED')}
+function checkStep(d){const b=chkBlock(chk.i);chk.i++;
+ if(!b){checkFinish();return}
+ if(b.kind!==chk.lastKind){chk.lastKind=b.kind;if(b.kind==='closed'){tone(392,250);tone(330,300,.3)}else tone(988,300)}
+ if(b.sec>=CHK_SKIP&&!d.em&&!d.ey&&d.poor===0&&d.full!==0&&d.ra>0)chk[b.kind].push(d.ra);
+ if(st)renderState()}
+function mean(a){return a.reduce((x,y)=>x+y,0)/a.length}
+function sdev(a){const m=mean(a);return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/Math.max(1,a.length-1))}
+function checkFinish(){checkMode=false;cmd('STOP');const o=chk.open,c=chk.closed;let txt;
+ if(o.length<8||c.length<8)txt=`Мало чистых секунд (глаза открыты ${o.length}, закрыты ${c.length}) — много морганий или плохой контакт. Поправь гарнитуру и повтори.`;
+ else{const mo=mean(o),mc=mean(c),pct=(mc/mo-1)*100,sp=Math.sqrt((sdev(o)**2+sdev(c)**2)/2),d=sp>0?(mc-mo)/sp:0;
+  const verdict=d>=0.8&&pct>=10?'ДА — плата видит альфа-ритм, сигнал мозговой.':d>=0.4&&pct>0?'СЛАБО — альфа-ритм виден, но еле-еле (на лбу он всегда слабее, чем на затылке).':'НЕТ — разницы не видно. Возможны плохой контакт или сильные помехи; повтори, сиди неподвижно.';
+  txt=`Доля альфа-ритма: глаза открыты ${(mo*100).toFixed(1)}%, закрыты ${(mc*100).toFixed(1)}% (${pct>=0?'+':''}${pct.toFixed(0)}%, d = ${d.toFixed(2)}). ${verdict}`}
+ $('checkRes').textContent=txt;logLine('[page] проверка гарнитуры: '+txt);[660,880].forEach((f,i)=>tone(f,160,i*.17));chk=null}
+function onSec(d){if(checkMode&&chk&&d.ph==='free')checkStep(d);trk.cur={tr:d.tr,ph:d.ph};if(!sess)sess={meta:{sess:'?',target:st?st.sess_target:'?'},started:new Date().toISOString(),secs:[],base:null,trials:[],summary:null};
+ sess.secs.push(d);live.push(d);if(live.length>120)live.shift();
+ if(d.ph!==lastPh){if(d.ph==='up'&&d.tl>=0){tone(523,140);tone(784,220,.16)}else if(d.ph==='dn'){tone(784,140);tone(440,240,.16)}else if(d.ph==='up'||d.ph==='free')tone(1046,250);else if(d.ph==='rest'){tone(523,180);tone(392,220,.22)}else if(d.ph==='base')tone(440,300);lastPh=d.ph;lastStreak=0}
+ if(d.ok&&!lastOk&&(d.ph==='up'||d.ph==='dn')){tone(1320,140);tone(1760,200,.15)}lastOk=d.ok;
+ if(d.ph==='free'&&st&&d.st===st.hold&&d.st>lastStreak)tone(1568,180);lastStreak=d.st||0;
+ meter(d);drawLive()}
+function meter(d){if(checkMode){$('why').textContent='Идёт проверка гарнитуры — следуй надписи сверху';$('mcap').textContent='';$('streak').innerHTML='';fbTone(false);return}const m=$('meter'),thr=d.thr,base=st?st.base_mean:null;
+ if(d.ph==='base'){const v=st&&st.sess_target==='ATT'?d.att:st&&st.sess_target==='MED'?d.med:null;
+  $('mbar').style.width=(v!=null?v:0)+'%';$('mval').textContent=v!=null?v:'фон';m.className='meter';$('mthr').style.display='none';$('mbase').style.display='none';
+  $('why').textContent=trk.on?'Собираю фон: следи за точкой, ничего не старайся':'Собираю фон: сиди спокойно, ничего не старайся';if(trk.on)$('trk').className='c-base';$('mcap').textContent='';fbTone(false);$('streak').innerHTML='';return}
+ const v=d.v<0?null:d.v;$('mbar').style.width=(v!=null?v:0)+'%';$('mval').textContent=v!=null?Math.round(v):'—';
+ $('mthr').style.display='';$('mthr').style.left=thr+'%';
+ if(d.tl>=0){$('mthrlo').style.display='';$('mthrlo').style.left=d.tl+'%'}else $('mthrlo').style.display='none';
+ if(base!=null){$('mbase').style.display='';$('mbase').style.left=base+'%'}
+ const dirty=!d.cl,above=d.cl&&v!=null&&(d.ph==='dn'?v<=d.tl:v>=thr);m.className='meter'+(dirty?' dirty':above?' above':'');
+ if(trk.on)$('trk').className='c-'+d.ph+((d.ph==='up'||d.ph==='dn')&&above?' good':'');
+ $('why').textContent=d.poor>0?'Плохой контакт — прижми электрод':d.em?'Мышцы лица напряжены — эта секунда не засчитывается':d.ey?'Моргание / движение глаз — секунда не засчитывается':
+  d.ph==='rest'?(d.tl>=0?'Просто следи за точкой, не старайся':'Отдых: не старайся, просто сиди'):above?'В зоне — держи!':d.ph==='dn'?'Опусти ниже оранжевой черты':d.tl>=0?'Подними выше чёрной черты':'Ниже черты — '+((TASK[st&&st.sess_target]||TASK.MED).verb);
+ $('mcap').innerHTML=d.tl>=0?`Полоса — «${esc((TASK[st&&st.sess_target]||TASK.MED).what)}». ВВЕРХ — выше чёрной черты (${Math.round(thr)}), ВНИЗ — ниже оранжевой (${Math.round(d.tl)}), серая — обычный уровень.`:
+  `Полоса — твой показатель «${esc((TASK[st&&st.sess_target]||TASK.MED).what)}». Чёрная черта — цель (${Math.round(thr)}), серая — твой обычный уровень.`;
+ const active=d.ph==='up'||d.ph==='dn'||d.ph==='free',h=st?st.hold:3;
+ $('streak').innerHTML=active?Array.from({length:h},(_,i)=>`<span class="${i<(d.st||0)?'on':''}"></span>`).join(''):'';
+ fbTone(active&&!dirty&&v!=null,220+v*7)}
+// ---------------- отрисовка состояния ----------------
+function chip(t,c){return `<span class="chip ${c}"><span class="dot"></span>${esc(t)}</span>`}
+function chips(){if(!BLE.linked||!st){$('chips').innerHTML=chip('Плата: нет связи','bad');return}
+ $('chips').innerHTML=chip('Плата: на связи','ok')+chip(st.link?'Гарнитура: данные идут':'Гарнитура: нет данных',st.link?'ok':'bad')+
+ chip(st.poor<0?'Контакт: ?':st.poor>=200?'Контакт: нет':st.poor>0?'Контакт: '+st.poor:'Контакт: OK',st.poor===0?'ok':st.poor>=200?'bad':'warn')+
+ chip('Сейчас: ATT '+st.att+' · MED '+st.med,'')}
+function renderState(){chips();const busy=!['idle','done'].includes(st.mode);
+ if(trk.on&&!busy)trkStop();if(trk.on)trkInfo();
+ $('bstart').style.display=busy?'none':'';$('bcheck').style.display=busy?'none':'';if(!busy&&checkMode&&chk&&Date.now()-chk.t0>6000){checkMode=false;chk=null;$('checkRes').textContent='Проверка прервана.'}$('bfree').style.display=busy?'none':'';$('bstop').style.display=busy?'':'none';
+ ['target','thr','hold','trials','rest','emgk','eyek','gemg','geye','bset','bset2'].forEach(id=>$(id).disabled=busy);
+ const ph=$('phase'),left=st.ph_len?Math.max(0,st.ph_len-st.sec):0;
+ if(checkMode&&chk&&(st.mode==='base'||st.mode==='free')){const b=st.mode==='base'?null:chkBlock(chk.i);ph.className='p-'+(b&&b.kind==='closed'?'up':'base');
+  $('phT').textContent=!b?'ГЛАЗА ОТКРЫТЫ':b.kind==='closed'?'ЗАКРОЙ ГЛАЗА':'ОТКРОЙ ГЛАЗА';
+  $('phTask').textContent=!b?'Смотри в одну точку, сиди спокойно. Это замер, ничего не старайся.':b.kind==='closed'?'Сиди с закрытыми глазами, пока не прозвучит высокий сигнал. Не жмурься.':'Смотри в одну точку, сиди спокойно.';
+  $('phS').textContent=!b?`проверка гарнитуры · замер ~${Math.max(0,st.ph_len-st.sec)} с`:`проверка гарнитуры · блок ${b.k+1}/4 · осталось ~${b.left} с`;return}
+ ph.className='p-'+st.mode;const tk=TASK[busy||st.mode==='done'?st.sess_target:st.target]||TASK.MED;
+ $('nfmode').disabled=busy;$('trkStage').disabled=busy;
+ if(st.bi&&busy){const bt=BI[st.sess_target]||BI.MED;
+  $('phT').textContent=st.mode==='base'?'ЗАМЕР ФОНА':st.mode==='rest'?'ПРОСТО СЛЕДИ':st.mode==='up'?'ВВЕРХ':st.mode==='dn'?'ВНИЗ':st.mode_ru;
+  $('phTask').textContent=st.mode==='base'?'Следи за точкой, ничего не старайся.':st.mode==='rest'?'Следи за точкой, не старайся.':st.mode==='up'?bt.up:st.mode==='dn'?bt.dn:'';
+  $('phS').textContent=st.mode==='base'?`осталось ~${left} с`:`попытка ${st.trial}/${st.trials} · осталось ~${left} с · успехов ${st.succ}`;return}
+ $('phT').textContent=st.mode==='idle'?(curTab==='tcal'?'Готово к проверке':'Готово к сессии'):st.mode==='base'?'ЗАМЕР ФОНА':st.mode==='rest'?tk.rest:(st.mode==='up'||st.mode==='free')?tk.up:st.mode_ru;
+ $('phTask').textContent=st.mode==='base'?'Сиди спокойно, глаза открыты, смотри в одну точку. Ничего не делай — плата запоминает твой обычный уровень.':
+  st.mode==='rest'?tk.restT:(st.mode==='up'||st.mode==='free')?tk.upT:st.mode==='idle'?(curTab==='tcal'?'Надень гарнитуру, сядь спокойно и нажми «Проверка гарнитуры». Пороги и помехи настраиваются ниже.':$('nfmode').value==='bi'?BI_INTRO:tk.intro):'';
+ $('phS').textContent=st.mode==='base'?`осталось ~${left} с`:st.mode==='rest'||st.mode==='up'?`попытка ${st.trial}/${st.trials} · осталось ~${left} с · успехов ${st.succ}`:
+  st.mode==='free'?`порог ${st.thr_abs.toFixed(0)} · держи ${st.hold} с подряд`:st.mode==='done'?`успехов ${st.succ} из ${st.done}`:curTab==='tcal'?'проверка ~2,5 мин':`цель: ${TNAME[st.target]}, порог фон + ${st.thr}σ, удержание ${st.hold} с`;
+ const f=(id,v)=>{if(document.activeElement!==$(id))$(id).value=v};
+ f('target',st.target in TNAME?st.target:'MED');f('thr',st.thr);f('hold',st.hold);f('trials',st.trials);if(st.rest!=null)f('rest',st.rest);f('emgk',st.emgk);f('eyek',st.eyek);f('gemg',st.gemg);f('geye',st.geye);
+ $('howto').textContent=$('nfmode').value==='bi'?BI_INTRO:(HOWTO[$('target').value]||'')}
+$('target').onchange=()=>{$('howto').textContent=$('nfmode').value==='bi'?BI_INTRO:HOWTO[$('target').value]};
+// Независимая проверка: показатель NeuroSky закрыт. Плата параллельно считает свой прозрачный показатель
+// (MED → доля альфа-ритма, ATT → бета/(тета+альфа)). Если он не меняется вместе с NeuroSky — рост, скорее всего, ненастоящий.
+// d ВВЕРХ−ВНИЗ только по попыткам, где слежение было (поймано ≥80 % миганий)
+function dOf(a,b){if(a.length<5||b.length<5)return null;const sp=Math.sqrt((sdev(a)**2+sdev(b)**2)/2);return sp>0?(mean(a)-mean(b))/sp:null}
+function validD(s){const ok=new Set(s.trials.filter(t=>t.trk_n>0&&t.trk_hit/t.trk_n>=.8).map(t=>t.trial));
+ const up=s.secs.filter(d=>d.ph==='up'&&d.cl===1&&ok.has(d.tr)).map(d=>d.v),dn=s.secs.filter(d=>d.ph==='dn'&&d.cl===1&&ok.has(d.tr)).map(d=>d.v);
+ const d=dOf(up,dn);return {trk_trials:ok.size,d_trk:d==null?null:+d.toFixed(3)}}
+function indepCheck(s){if(!s||!s.secs)return null;const t=s.meta.target,key=t==='ATT'||t==='FOCUS'?'fo':'ra';
+ if(s.meta.bi){const up=s.secs.filter(d=>d.ph==='up'&&d.cl===1).map(d=>d[key]),dn=s.secs.filter(d=>d.ph==='dn'&&d.cl===1).map(d=>d[key]);
+  const d=dOf(up,dn);return {title:(key==='ra'?'Доля альфы (свой прибор)':'Бета/(тета+альфа) (свой прибор)')+': ВВЕРХ − ВНИЗ',value:d==null?'мало чистых секунд':`d ${d.toFixed(2)}`}}
+ const up=s.secs.filter(d=>d.ph==='up'&&d.cl===1).map(d=>d[key]),re=s.secs.filter(d=>d.ph==='rest'&&d.cl===1).map(d=>d[key]);
+ if(up.length<10||re.length<10)return {title:'Проверка своим прибором',value:'мало чистых секунд'};
+ const mu=mean(up),mr=mean(re),sp=Math.sqrt((sdev(up)**2+sdev(re)**2)/2),d=sp>0?(mu-mr)/sp:0;
+ const pct=key==='ra'?(mu/mr-1)*100:(Math.pow(10,mu-mr)-1)*100;
+ const word=d>=0.2?'вырос':d<=-0.2?'упал':'не изменился';
+ return {title:(key==='ra'?'Альфа-ритм (свой прибор), когда расслаблялся':'Бета/(тета+альфа) (свой прибор), когда считал'),value:`${word}: ${pct>=0?'+':''}${pct.toFixed(0)}% (d ${d.toFixed(2)})`}}
+function verdictOther(od,d){if(od==null||d==null||isNaN(od)||isNaN(d))return '';if(Math.abs(d)<0.3)return ' — управления целью пока нет';
+ return Math.abs(od)<0.3?' — почти не сдвинулся: управление раздельное':Math.sign(od)===Math.sign(d)?' — сдвинулся в ту же сторону (общий сдвиг)':' — сдвинулся в обратную сторону (связаны)'}
+function renderSessBi(){const s=sess.summary,b=sess.base,tr=sess.trials,T=sess.meta.target,O=sess.meta.other||OTHER[T];
+ $('sessId').textContent=`№${sess.meta.sess} · ${TNAME[T]||T} · ВВЕРХ/ВНИЗ · точка ${sess.meta.stage||'?'}`;
+ $('thUp').textContent='Цель';$('thRest').textContent='Отдых';
+ const up=tr.filter(t=>t.dir==='up'),dn=tr.filter(t=>t.dir==='dn'),a=s?{n:s.trk_n,hit:s.trk_hit}:trkStats(null),fl=s?s.trk_false:trk.false,chkv=indepCheck(sess);
+ const kv=[['Успехов ВВЕРХ / ВНИЗ',`${up.filter(t=>t.ok).length}/${up.length} · ${dn.filter(t=>t.ok).length}/${dn.length}`],
+  ['Фон',b?`${b.base_mean.toFixed(1)} → ВВЕРХ ≥ ${b.thr.toFixed(0)}, ВНИЗ ≤ ${(b.thr_lo??0).toFixed(0)}`:'…'],
+  ['ВВЕРХ − ВНИЗ, пункты',s?sg(s.diff):'…'],['d ВВЕРХ−ВНИЗ (0.5 заметно, 0.8 сильно)',s?f2(s.d):'…'],
+  ['d только где следил',s?(s.d_trk!=null?f2(s.d_trk)+` (${s.trk_trials} попыток)`:'мало данных'):'…'],
+  [`Второй показатель (${TNAME[O]||O}): ВВЕРХ − ВНИЗ`,s?`${sg(s.o_diff)}, d ${f2(s.o_d)}${verdictOther(s.o_d,s.d)}`:'…'],
+  ['Слежение',a.n?`${a.hit}/${a.n} миганий${fl?` · лишних касаний ${fl}`:''}`:'…'],
+  ['Секунд без помех',s?Math.round(s.clean_up*100)+'%':'…']];
+ if(chkv)kv.push([chkv.title,chkv.value]);if(b&&b.weak)kv.push(['Фон','МНОГО ПОМЕХ']);
+ $('sessKv').innerHTML=kv.map(([k,v])=>`<div><span class="muted">${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
+ $('trialsT').innerHTML=tr.map(t=>{const tk=t.trk_n?`${t.trk_hit}/${t.trk_n}`:'—',bad=t.trk_n&&t.trk_hit/t.trk_n<.8;
+  return `<tr><td>${t.trial} ${t.dir==='dn'?'<span class="tag" style="color:var(--orange)">ВНИЗ</span>':'<span class="tag" style="color:var(--blue)">ВВЕРХ</span>'}</td><td>${t.ok?'<span class="tag g">успех</span>':'<span class="tag">нет</span>'}</td>`+
+  `<td class="n">${t.up_n?t.up_mean.toFixed(1):'—'}</td><td class="n">${t.rest_n?t.rest_mean.toFixed(1):'—'}</td><td class="n">${t.up_n>=3&&t.rest_n>=3?sg(t.diff):'—'}</td>`+
+  `<td class="n">${t.up_n}/${t.up_secs}</td><td class="n">${t.up_emg}/${t.up_eye}</td><td class="n"${bad?' style="color:var(--red)"':''}>${tk}</td><td class="n">${t.o_mean!=null&&t.o_rest!=null?sg(t.o_mean-t.o_rest):'—'}</td></tr>`}).join('')}
+function renderSess(){if(!sess||(sess.meta&&sess.meta.check)){$('sessCard').style.display='none';return}$('sessCard').style.display='';
+ $('thTrk').style.display=$('thOth').style.display=sess.meta.bi?'':'none';
+ if(sess.meta.bi){renderSessBi();return}
+ const T=TASK[sess.meta.target]||TASK.MED;$('thUp').textContent=T.past;$('thRest').textContent=T.pastRest||'Ничего не делал';
+ $('sessId').textContent=`№${sess.meta.sess} · ${TNAME[sess.meta.target]||sess.meta.target}`;
+ const s=sess.summary,b=sess.base,tr=sess.trials,ok=tr.filter(t=>t.ok).length;
+ const chkv=indepCheck(sess);
+ const kv=[['Успехов',`${ok} / ${tr.length}`],['Фон',b?`${b.base_mean.toFixed(1)} → порог ${b.thr.toFixed(0)}`:'…'],
+  ['Насколько выше, когда старался',s?sg(s.diff):'…'],['Сила эффекта (d: 0.2 слабо, 0.5 заметно, 0.8 сильно)',s?f2(s.d):'…'],['Секунд без помех',s?Math.round(s.clean_up*100)+'%':'…']];
+ if(chkv)kv.push([chkv.title,chkv.value]);
+ if(b&&b.weak)kv.push(['Фон','МНОГО ПОМЕХ']);
+ $('sessKv').innerHTML=kv.map(([k,v])=>`<div><span class="muted">${k}</span><b>${esc(v)}</b></div>`).join('');
+ $('trialsT').innerHTML=tr.map(t=>`<tr><td>${t.trial}</td><td>${t.ok?'<span class="tag g">успех</span>':'<span class="tag">нет</span>'}</td><td class="n">${t.up_n?t.up_mean.toFixed(1):'—'}</td><td class="n">${t.rest_n?t.rest_mean.toFixed(1):'—'}</td>`+
+  `<td class="n">${t.up_n>=3&&t.rest_n>=3?sg(t.diff):'—'}</td><td class="n">${t.up_n}/${t.up_secs}</td><td class="n">${t.up_emg}/${t.up_eye}</td></tr>`).join('')}
+// ---------------- график «последние 2 минуты» ----------------
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function setup(c){const r=window.devicePixelRatio||1,w=c.clientWidth,h=c.height/(c._r||1);c._r=r;c.width=w*r;c.height=h*r;const x=c.getContext('2d');x.setTransform(r,0,0,r,0,0);return [x,w,h]}
+function drawLive(){const c=$('live');const [x,w,h]=setup(c);x.clearRect(0,0,w,h);const L=30,R=8,T=8,B=18,pw=w-L-R,ph=h-T-B;
+ const X=i=>L+pw*i/119,Y=v=>T+ph*(1-v/100);x.font='11px sans-serif';x.fillStyle=css('--ink2');x.strokeStyle=css('--line');x.lineWidth=1;
+ [0,50,100].forEach(v=>{x.beginPath();x.moveTo(L,Y(v));x.lineTo(w-R,Y(v));x.stroke();x.fillText(v,4,Y(v)+4)});
+ const off=120-live.length;
+ live.forEach((d,i)=>{if(d.ph==='up'||d.ph==='dn'||d.ph==='free'){x.fillStyle=css(d.ph==='dn'?'--orange':'--blue')+'22';x.fillRect(X(i+off)-pw/238,T,pw/119+1,ph)}});
+ const tl=live.filter(d=>d.tl>=0).slice(-1)[0];if(tl){x.setLineDash([5,4]);x.strokeStyle=css('--orange');x.beginPath();x.moveTo(L,Y(tl.tl));x.lineTo(w-R,Y(tl.tl));x.stroke();x.setLineDash([])}
+ const tv=live.filter(d=>d.thr).slice(-1)[0];if(tv){x.setLineDash([5,4]);x.strokeStyle=css('--ink');x.beginPath();x.moveTo(L,Y(tv.thr));x.lineTo(w-R,Y(tv.thr));x.stroke();x.setLineDash([])}
+ const val=d=>d.ph==='base'?(st&&st.sess_target==='ATT'?d.att:st&&st.sess_target==='MED'?d.med:null):(d.v>=0?d.v:null);
+ x.lineWidth=2;for(let i=1;i<live.length;i++){const a=live[i-1],b=live[i],va=val(a),vb=val(b);if(va==null||vb==null)continue;
+  x.strokeStyle=b.cl===0||b.ph==='base'?css('--grey'):css('--blue');x.beginPath();x.moveTo(X(i-1+off),Y(va));x.lineTo(X(i+off),Y(vb));x.stroke()}
+ x.fillStyle=css('--ink2');x.fillText('−2 мин',L,h-4);x.fillText('сейчас',w-R-36,h-4)}
+// ---------------- история ----------------
+const HK='neurotrain_hist_v1';
+function loadHist(){try{return JSON.parse(localStorage.getItem(HK)||'[]')}catch(e){return[]}}
+function saveHist(s){try{const h=loadHist();h.push({date:s.started,meta:s.meta,base:s.base,summary:s.summary,trials:s.trials,secs:s.secs});
+ while(JSON.stringify(h).length>4e6)h.shift();localStorage.setItem(HK,JSON.stringify(h))}catch(e){logLine('[page] не удалось сохранить историю в браузере: '+e.message)}}
+const hkey=x=>x.meta.target+(x.meta.bi?'_BI':''),hname=k=>{const [t,b]=k.split('_');return (TNAME[t]||t)+(b?' · ВВЕРХ/ВНИЗ':' · только вверх')};
+function renderHist(){const h=loadHist().filter(x=>x.summary&&!x.summary.aborted);const tg=[...new Set(h.map(hkey))];
+ const sel=$('histTarget'),cur=sel.value;sel.innerHTML=tg.map(t=>`<option value="${t}">${esc(hname(t))}</option>`).join('')||'<option>нет сессий</option>';
+ if(tg.includes(cur))sel.value=cur;const rows=h.filter(x=>hkey(x)===sel.value);
+ $('histT').innerHTML=rows.map((x,i)=>{const s=x.summary;return `<tr><td>${new Date(x.date).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td><td>${esc(TNAME[x.meta.target]||x.meta.target)}</td>`+
+  `<td class="n">${s.succ}/${s.trials}</td><td class="n">${sg(s.diff)}</td><td class="n">${f2(s.d)}</td><td class="n">${Math.round(s.clean_up*100)}%</td><td><button data-dl="${loadHist().indexOf(x)}" style="min-height:30px;padding:4px 8px">CSV</button></td></tr>`}).join('');
+ document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>downloadSess(loadHist()[+b.dataset.dl]));drawCurve(rows)}
+$('histTarget').onchange=renderHist;
+let curvePts=[];
+function drawCurve(rows){const c=$('curve');const [x,w,h]=setup(c);x.clearRect(0,0,w,h);curvePts=[];
+ const L=34,R=40,T=10,B=22,pw=w-L-R,ph=h-T-B;x.font='11px sans-serif';
+ if(!rows.length){x.fillStyle=css('--ink2');x.fillText('Пока нет законченных сессий с этой целью',L,h/2);return}
+ const n=rows.length,bw=Math.min(28,pw/n*.6),Xc=i=>L+pw*(i+.5)/n,Y1=v=>T+ph*(1-v),dm=Math.max(10,...rows.map(r=>Math.abs(r.summary.diff||0)))*1.1,Y2=v=>T+ph*(.5-v/(2*dm));
+ x.strokeStyle=css('--line');x.fillStyle=css('--ink2');[0,.5,1].forEach(v=>{x.beginPath();x.moveTo(L,Y1(v));x.lineTo(w-R,Y1(v));x.stroke();x.fillText(Math.round(v*100)+'%',2,Y1(v)+4)});
+ x.fillText('+'+dm.toFixed(0),w-R+4,Y2(dm)+4);x.fillText('0',w-R+4,Y2(0)+4);x.fillText('−'+dm.toFixed(0),w-R+4,Y2(-dm)+4);
+ rows.forEach((r,i)=>{const s=r.summary,rate=s.trials?s.succ/s.trials:0,y=Y1(rate);x.fillStyle=css('--blue')+'66';
+  const top=Math.min(y,Y1(0)-2);x.beginPath();x.roundRect?x.roundRect(Xc(i)-bw/2,top,bw,Y1(0)-top,[4,4,0,0]):x.rect(Xc(i)-bw/2,top,bw,Y1(0)-top);x.fill();
+  if(s.diff!=null)curvePts.push({x:Xc(i),y:Y2(s.diff),r,i})});
+ x.strokeStyle=css('--green');x.lineWidth=2;x.beginPath();curvePts.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));x.stroke();
+ curvePts.forEach(p=>{x.fillStyle=css('--green');x.strokeStyle=css('--card');x.lineWidth=2;x.beginPath();x.arc(p.x,p.y,5,0,7);x.fill();x.stroke()});
+ x.fillStyle=css('--ink2');x.fillText('сессия 1',L,h-5);x.fillText(String(n),w-R-8,h-5)}
+$('curve').addEventListener('mousemove',e=>{const r=$('curve').getBoundingClientRect(),mx=e.clientX-r.left;let best=null;
+ curvePts.forEach(p=>{if(!best||Math.abs(p.x-mx)<Math.abs(best.x-mx))best=p});const tip=$('tip');
+ if(!best||Math.abs(best.x-mx)>30){tip.style.display='none';return}const s=best.r.summary;
+ tip.innerHTML=`Сессия ${best.i+1} · ${new Date(best.r.date).toLocaleDateString('ru-RU')}<br>Успех ${s.succ}/${s.trials} · разница ${sg(s.diff)} · d ${f2(s.d)}`;
+ tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px'});
+$('curve').addEventListener('mouseleave',()=>$('tip').style.display='none');
+// ---------------- CSV ----------------
+function dl(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+const COLS=['t','ph','tr','s','att','med','poor','ra','fo','env','lf','bl','full','v','o','thr','tl','em','ey','cl','st','ok'];
+function downloadSess(s){if(!s)return;const d=new Date(s.started||s.date),tag=d.toISOString().slice(0,16).replace(/[-:T]/g,'');
+ dl(`nf_${tag}_s${s.meta.sess}_${s.meta.target}.csv`,COLS.join(',')+'\n'+s.secs.map(r=>COLS.map(k=>r[k]??'').join(',')).join('\n')+'\n')}
+$('bcsv').onclick=()=>downloadSess(sess);
+$('bhcsv').onclick=()=>{const h=loadHist().filter(x=>x.summary);const K=['sess','target','mode','aborted','trials','succ','rate','diff','d','up_mean','dn_mean','rest_mean','n_up','succ_up','n_dn','succ_dn','other','o_diff','o_d','d_trk','trk_trials','trk_n','trk_hit','stage','clean_up','clean_rest','base_mean','thr','thr_lo'];
+ dl('nf_summaries.csv','date,'+K.join(',')+'\n'+h.map(x=>x.date+','+K.map(k=>x.summary[k]??'').join(',')).join('\n')+'\n')};
+$('bhclear').onclick=()=>{if(confirm('Удалить всю историю тренировок из этого браузера? (CSV-файлы не затрагиваются)')){try{localStorage.removeItem(HK)}catch(e){}renderHist()}};
+// ---------------- кнопки ----------------
+$('bstart').onclick=()=>{soundAuto();cmd(($('nfmode').value==='bi'?'NF BI ':'NF START ')+$('target').value+' '+$('trials').value)};
+try{$('nfmode').value=localStorage.getItem('neurotrain_mode')||'bi'}catch(e){}$('trkStage').value=String(trk.stage);
+$('nfmode').onchange=()=>{try{localStorage.setItem('neurotrain_mode',$('nfmode').value)}catch(e){}if(st)renderState()};
+$('bcheck').onclick=()=>{soundAuto();checkStart()};
+$('bfree').onclick=()=>{soundAuto();cmd('NF FREE '+$('target').value)};
+$('bstop').onclick=()=>{if(confirm('Остановить сессию? Незаконченная сессия в кривую обучения не попадёт.')){trkStop();cmd('STOP')}};
+$('bstate').onclick=()=>cmd('P');
+const saveSet=async()=>{await cmd('TARGET '+$('target').value);await cmd('THR '+$('thr').value);await cmd('HOLD '+$('hold').value);await cmd('TRIALS '+$('trials').value);if($('rest').value)await cmd('REST '+$('rest').value);
+ await cmd('EMGK '+$('emgk').value);await cmd('EYEK '+$('eyek').value);await cmd('GUARD '+$('gemg').value+' '+$('geye').value)};
+$('bset').onclick=saveSet;$('bset2').onclick=saveSet;
+window.addEventListener('resize',()=>{drawLive();renderHist()});
+chips();renderHist();drawLive();$('howto').textContent=$('nfmode').value==='bi'?BI_INTRO:HOWTO.MED;
+$('bdisc').onclick=()=>bleDisconnect();
+return {onLine,onDisc:()=>{fbTone(false);chips()},gesture:soundAuto,redraw:()=>{drawLive();renderHist();if(st)renderState()}};
+
+})();
+connUi(CONN_HINT,true);g$('chips').innerHTML=chip0('Плата: нет связи','bad');tabsUi();
 </script><script>
 // офлайн-режим: страница сохраняется в телефоне после первого открытия
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
