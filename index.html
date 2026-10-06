@@ -264,7 +264,7 @@ function route(line){const k=line[0];
  else if(k==='S'){try{const j=JSON.parse(line.slice(1));if(j.fw&&/combo/.test(j.fw)&&!BLE.modes){BLE.modes=true;setTimeout(tabsUi,0)}if('ch7' in j||'cal_nsteps' in j)setKind('np');else if('sess_target' in j||j.fw&&/^nf/i.test(j.fw))setKind('nf')/* режим — по полям состояния: работает и без приветствия H */}catch(e){}}
  if(!BLE.kind){if(k==='L')BLE.pend.push(line);return}   // строки журнала до того, как стало ясно, какая прошивка, — отдадим потом
  (BLE.kind==='np'?EMG:EEG).onLine(line)}
-function setKind(k){if(BLE.kind===k)return;BLE.kind=k;const app=k==='np'?EMG:EEG;BLE.pend.splice(0).forEach(l=>app.onLine(l));
+function setKind(k){if(BLE.kind===k)return;BLE.kind=k;BLE.switching=false;BLE.modeMsg='';const app=k==='np'?EMG:EEG;BLE.pend.splice(0).forEach(l=>app.onLine(l));
  if(BLE.autoTab){BLE.autoTab=false;if(TAB_KIND[curTab]!==k)showTab(lastTab[k])}
  tabsUi()}
 // ---------- вкладки ----------
@@ -281,12 +281,12 @@ function tabsUi(){const side=TAB_KIND[curTab];
  g$('e-mismatch').classList.add('off');g$('t-mismatch').classList.add('off');g$('emg').classList.toggle('mm',!!mm&&side==='np');g$('eeg').classList.toggle('mm',!!mm&&side==='nf');
  if(mm){box.classList.remove('off');const want=side==='np'?'ЭМГ':'ЭЭГ',cur=BLE.kind==='np'?'ЭМГ':'ЭЭГ';
   box.innerHTML=BLE.modes?
-   `<b>Плата сейчас в режиме ${cur}.</b> Эта вкладка — режим ${want}. Переключение перезагрузит плату (~10 с), страница переподключится сама. Во время калибровки или сессии плата откажет — сначала «Остановить».`+(BLE.modeMsg?`<div style="margin-top:8px"><b>Ответ платы:</b> ${BLE.modeMsg.replace(/[<>&]/g,'')}</div>`:'')+
+   `<b>Плата сейчас в режиме ${cur}.</b> Эта вкладка — режим ${want}. Переключение займёт пару секунд, связь с гарнитурой и телефоном сохранится (старые версии общей прошивки перезагружались). Во время калибровки или сессии плата откажет — сначала «Остановить».`+(BLE.modeMsg?`<div style="margin-top:8px"><b>Ответ платы:</b> ${BLE.modeMsg.replace(/[<>&]/g,'')}</div>`:'')+
    `<div class="row" style="margin-top:10px"><button class="primary" onclick="switchMode('${side}')">Переключить плату в ${want}</button><button onclick="showTab(lastTab['${BLE.kind}'])">Вернуться в ${cur}</button></div>`:
    `<b>На плате другая прошивка.</b> Сейчас залита ${KIND_NAME[BLE.kind]}. Эта вкладка работает с прошивкой <b>${side==='np'?'firmware/neuro_pilot':'firmware/neuro_feedback'}</b> (или общей <b>firmware/neuro_combo</b>) — залей её и подключись снова. Или перейди на вкладку `+
   `<button style="min-height:32px;padding:4px 10px" onclick="showTab(lastTab['${BLE.kind}'])">${BLE.kind==='np'?'ЭМГ':'ЭЭГ'}</button>`}}
 function switchMode(side){if(!BLE.linked)return;BLE.switching=true;cmd('MODE '+(side==='nf'?'EEG':'EMG'));
- const box=g$(side==='np'?'e-mismatch':'t-mismatch');box.innerHTML='Переключаю режим… Если плата ответила «сначала STOP» (см. журнал на другой вкладке) — останови калибровку или сессию и нажми ещё раз.';
+ const box=g$(side==='np'?'e-mismatch':'t-mismatch');box.innerHTML='Переключаю режим…';
  setTimeout(()=>{if(BLE.linked&&BLE.kind!==side){BLE.switching=false;tabsUi()}},6000)}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function chip0(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
@@ -355,8 +355,8 @@ function render(s){
  if(s.cue_seq!==lastCue){ if(lastCue!==-1&&s.cue_text&&!(calStep&&s.cue_kind==='cue'))play(s.cue_kind,s.cue_text); lastCue=s.cue_seq;}
  if(!cueSync(s)){cue.className='k-'+(s.cue_text?s.cue_kind:'idle');cue.textContent=s.cue_text||'—'}
  const cal=s.mode==='cal_rest'||s.mode==='cal_step'||s.mode==='cal_pause';
- $('bcal').style.display=(cal||s.owner)?'none':'';$('bstop').style.display=(cal||s.owner)?'':'none';
- $('owner').textContent=s.owner==1?'Калибровку запустили с компьютера: здесь только просмотр и «Остановить».':s.owner==2?'Калибровка идёт со страницы — консоль на компьютере отключена до её окончания.':'';
+ const nol=!s.link&&!cal;$('bcal').disabled=nol;$('bcal').textContent=nol?'Калибровка — нет гарнитуры':'Калибровка';$('bcal').style.display=(cal||s.owner)?'none':'';$('bstop').style.display=(cal||s.owner)?'':'none';
+ $('owner').textContent=s.owner==1?'Калибровку запустили с компьютера: здесь только просмотр и «Остановить».':s.owner==2?'Калибровка идёт со страницы — консоль на компьютере отключена до её окончания.':nol?'Гарнитура не подключена — включи её, плата подключится сама. Без неё калибровку не начать.':'';
  $('calbox').style.display=cal?'':'none';
  if(cal){const tot=s.cal_nsteps+1,done=s.mode==='cal_rest'?0:s.cal_step+1;$('calbar').style.width=(100*done/tot)+'%';
   $('caltxt').textContent=(s.mode==='cal_rest'?'Покой: осталось '+s.rest_left+' с':'Шаг '+(s.cal_step+1)+'/'+s.cal_nsteps+', повтор '+s.cal_rep+'/'+s.cal_reps)+
@@ -509,7 +509,7 @@ function chips(){if(!BLE.linked||!st){$('chips').innerHTML=chip('Плата: н�
  chip('Сейчас: ATT '+st.att+' · MED '+st.med,'')}
 function renderState(){chips();const busy=!['idle','done'].includes(st.mode);
  if(trk.on&&!busy)trkStop();if(trk.on)trkInfo();
- $('bstart').style.display=busy?'none':'';$('bcheck').style.display=busy?'none':'';if(!busy&&checkMode&&chk&&Date.now()-chk.t0>6000){checkMode=false;chk=null;$('checkRes').textContent='Проверка прервана.'}$('bfree').style.display=busy?'none':'';$('bstop').style.display=busy?'':'none';
+ const nol=!st.link&&!busy;['bstart','bfree','bcheck'].forEach(id=>{$(id).disabled=nol;$(id).title=nol?'Гарнитура не подключена':''});$('bstart').style.display=busy?'none':'';$('bcheck').style.display=busy?'none':'';if(!busy&&checkMode&&chk&&Date.now()-chk.t0>6000){checkMode=false;chk=null;$('checkRes').textContent='Проверка прервана.'}$('bfree').style.display=busy?'none':'';$('bstop').style.display=busy?'':'none';
  ['target','thr','hold','trials','rest','emgk','eyek','gemg','geye','bset','bset2'].forEach(id=>$(id).disabled=busy);
  const ph=$('phase'),left=st.ph_len?Math.max(0,st.ph_len-st.sec):0;
  if(checkMode&&chk&&(st.mode==='base'||st.mode==='free')){const b=st.mode==='base'?null:chkBlock(chk.i);ph.className='p-'+(b&&b.kind==='closed'?'up':'base');
@@ -529,7 +529,8 @@ function renderState(){chips();const busy=!['idle','done'].includes(st.mode);
   st.mode==='free'?`порог ${st.thr_abs.toFixed(0)} · держи ${st.hold} с подряд`:st.mode==='done'?`успехов ${st.succ} из ${st.done}`:curTab==='tcal'?'проверка ~2,5 мин':`цель: ${TNAME[st.target]}, порог фон + ${st.thr}σ, удержание ${st.hold} с`;
  const f=(id,v)=>{if(document.activeElement!==$(id))$(id).value=v};
  f('target',st.target in TNAME?st.target:'MED');f('thr',st.thr);f('hold',st.hold);f('trials',st.trials);if(st.rest!=null)f('rest',st.rest);f('emgk',st.emgk);f('eyek',st.eyek);f('gemg',st.gemg);f('geye',st.geye);
- $('howto').textContent=$('nfmode').value==='bi'?BI_INTRO:(HOWTO[$('target').value]||'')}
+ $('howto').textContent=$('nfmode').value==='bi'?BI_INTRO:(HOWTO[$('target').value]||'');
+ if(nol){$('phT').textContent='Гарнитура не подключена';$('phTask').textContent='Включи гарнитуру и надень её — плата подключится сама. Пока нет данных, начать сессию или проверку нельзя.';$('phS').textContent='жду данные гарнитуры…'}}
 $('target').onchange=()=>{$('howto').textContent=$('nfmode').value==='bi'?BI_INTRO:HOWTO[$('target').value]};
 // Независимая проверка: показатель NeuroSky закрыт. Плата параллельно считает свой прозрачный показатель
 // (MED → доля альфа-ритма, ATT → бета/(тета+альфа)). Если он не меняется вместе с NeuroSky — рост, скорее всего, ненастоящий.
