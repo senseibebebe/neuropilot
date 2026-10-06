@@ -291,6 +291,8 @@ function switchMode(side){if(!BLE.linked)return;BLE.switching=true;cmd('MODE '+(
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function chip0(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
 g$('bconn').onclick=()=>{EMG.gesture();EEG.gesture();bleConnect()};
+// «я жив» для общей прошивки: плата закрывает подключение, если страница пропала (иначе мёртвое подключение запирает плату)
+setInterval(()=>{if(BLE.linked&&BLE.modes)cmd('PING')},5000);
 </script>
 <script>
 // ===================== ЭМГ: страница калибровки и управления (прошивка neuro_pilot) =====================
