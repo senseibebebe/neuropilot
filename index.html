@@ -82,7 +82,7 @@ section.mm>.card:not(.warnbox){display:none}
 #eeg .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}#eeg .kv div{background:var(--chip);border-radius:10px;padding:8px}#eeg .kv b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
 #t-trkWrap{margin-bottom:10px}
 /* ЭЭГ демо (чужая открытая запись) */
-body.demo #conncard{display:none}
+body.demo #conncard,body.demo #chips{display:none}
 #demo .src{font-size:13px;color:var(--ink2)}#demo .src b{color:var(--ink)}
 #d-head{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #d-cue,#d-cmd{border-radius:14px;padding:12px 8px;text-align:center;min-height:86px;display:flex;flex-direction:column;justify-content:center;gap:2px}
@@ -921,7 +921,7 @@ const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,ou
   catch(e){this.status((/cancel|chosen/i.test(e.message)?'Плата не выбрана.':'Не подключилось: '+e.message));this.on=false}},
  disconnect(){this.on=false;try{this.dev&&this.dev.gatt.connected&&this.dev.gatt.disconnect()}catch(e){}this.reset('Плата отключена. Через 1 с без данных она сама вернёт CH7 в 1500.')},
  lost(){if(!this.on)return;this.on=false;this.reset('Связь с платой потеряна. Плата сама вернёт CH7 в 1500 через 1 с. Подключи снова.')},
- reset(msg){this.ready=false;this.out=[];this.outLen=0;this.busy=false;this.ch7=1500;
+ reset(msg){ticker(false);this.ready=false;this.out=[];this.outLen=0;this.busy=false;this.ch7=1500;
   $('bconn').style.display='';$('bdisc').style.display='none';$('speed').disabled=false;$('next').disabled=false;this.status(msg);draw()},
  status(h){$('bst').innerHTML=h},
  data(dv){this.inbuf+=new TextDecoder().decode(dv);let i;while((i=this.inbuf.indexOf('\n'))>=0){const l=this.inbuf.slice(0,i).replace(/\r$/,'');this.inbuf=this.inbuf.slice(i+1);if(l)this.line(l)}},
@@ -931,7 +931,7 @@ const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,ou
    this.chunk=Math.max(20,Math.min(240,this.mtu-3));
    const h=this.hello||{},runs=(h.runs||'').trim().split(/\s+/);
    if(h.subject&&h.subject!==this.S.subj){this.status(`В плате модель для ${h.subject}, а запись — ${this.S.subj}. Перепрошей плату или обнови страницу.`);return}
-   this.runs=runs;this.ready=true;
+   this.runs=runs;this.ready=true;if(playing)play(true);
    this.status(`Плата <b>${h.subject||'?'}</b> на связи (MTU ${this.mtu}${this.mtu<=23?' — маленький пакет, поток может идти медленнее реального времени':''}). `+
     `Нажми «Пуск»: запись пойдёт на плату в реальном времени, CH7 на пульте будет ставить плата.`);
    this.startRun()}
@@ -968,18 +968,29 @@ const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,ou
  ui(){if(!this.on)return;const el=$('bkv');const S=this.S&&R&&this.S.runs.find(r=>r.name===R.run);
   const decs=[...this.dec.entries()].filter(([k])=>k.startsWith(R.run+':')).map(([,d])=>d);
   const same=decs.filter(d=>{const tr=R.trials.find(x=>Math.round(x.t*160)===d.i);return tr&&tr.ch7===d.ch7}).length;
-  const ok=decs.filter(d=>d.ok).length,lag=Math.max(0,(this.sent-this.ack)/MI_FS),rate=this.bytes/Math.max(.001,(performance.now()-this.t0)/1000);
+  const el_s=Math.max(.001,(performance.now()-this.t0)/1000),ok=decs.filter(d=>d.ok).length,lag=Math.max(0,(this.sent-this.ack)/MI_FS),
+   rate=playing?(this.bytes-(this.bytes0||0))/el_s:0,rt=playing&&this.run===this.run0&&el_s>2?(this.sent-(this.sent0||0))/MI_FS/el_s:null;
   el.innerHTML=`<div>отправлено<b>${fmt(this.sent/MI_FS)}</b></div><div class="${lag>1.5?'bad':''}">отставание платы<b>${lag.toFixed(1).replace('.',',')} с</b></div>`+
-   `<div>поток<b>${(rate/1000).toFixed(1).replace('.',',')} КБ/с</b></div><div class="${!decs.length?'':same<decs.length?'bad':'good'}">решения платы = страницы<b>${same} из ${decs.length}</b></div>`+
+   `<div>поток<b>${playing?(rate/1000).toFixed(1).replace('.',',')+' КБ/с':'—'}</b></div>`+
+   `<div class="${rt!==null&&rt<0.95?'bad':''}">скорость к реальному времени<b>${rt===null?'—':'×'+rt.toFixed(2).replace('.',',')}</b></div><div class="${!decs.length?'':same<decs.length?'bad':'good'}">решения платы = страницы<b>${same} из ${decs.length}</b></div>`+
    `<div>верно у платы<b>${ok} из ${decs.length}</b></div><div class="${this.xs?'bad':''}">ошибки приёма<b>${this.xs}</b></div>`+
    (this.err?`<div class="bad" style="grid-column:1/-1">${this.err}</div>`:'')}};
 $('bconn').onclick=()=>B.connect();
 $('bdisc').onclick=()=>B.disconnect();
 function loop(now){raf=0;if(!playing)return;const dt=Math.min(.25,(now-last)/1000);last=now;
- if(B.on){if(B.ready&&B.backlog()<1.0)t+=dt;B.pump(t)}           // с платой — только 1×; канал не успевает — время ждёт
- else t+=dt*(+$('speed').value);
- if(t>=R.dur){const i=(D.runs.indexOf(R)+1)%D.runs.length;setRun(i)}draw();if(B.on)B.ui();raf=requestAnimationFrame(loop)}
-function play(on){playing=on&&!!R;$('play').textContent=playing?'⏸ Пауза':'▶ Пуск';if(playing&&!raf){last=performance.now();raf=requestAnimationFrame(loop)}}
+ if(!B.on){t+=dt*(+$('speed').value);if(t>=R.dur){const i=(D.runs.indexOf(R)+1)%D.runs.length;setRun(i)}}
+ draw();if(B.on)B.ui();raf=requestAnimationFrame(loop)}
+// С платой время и отправку ведёт таймер в Worker: перерисовку (requestAnimationFrame) браузер останавливает,
+// когда окно закрыто другим или экран телефона погас, а таймеры Worker идут дальше.
+let tickW=null,tickLast=0;
+function tick(){if(!B.on||!playing||!R)return;const now=performance.now(),dt=Math.min(.25,(now-tickLast)/1000);tickLast=now;
+ if(B.ready&&B.backlog()<1.0)t+=dt;                                  // канал не успевает — время ждёт, отсчёты не теряются
+ B.pump(t);if(t>=R.dur){const i=(D.runs.indexOf(R)+1)%D.runs.length;setRun(i)}}
+function ticker(on){if(on&&!tickW){try{tickW=new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),20)'],{type:'text/javascript'})));
+  tickW.onmessage=tick}catch(e){tickW=setInterval(tick,20)}tickLast=performance.now()}
+ else if(!on&&tickW){if(tickW.terminate)tickW.terminate();else clearInterval(tickW);tickW=null}}
+function play(on){playing=on&&!!R;$('play').textContent=playing?'⏸ Пауза':'▶ Пуск';if(playing&&!raf){last=performance.now();raf=requestAnimationFrame(loop)}
+ ticker(playing&&B.on);if(playing&&B.on){B.t0=performance.now();B.bytes0=B.bytes;B.sent0=B.sent;B.run0=B.run}}
 $('play').onclick=()=>play(!playing);
 $('run').onchange=()=>{setRun(+$('run').value)};
 $('next').onclick=()=>{if(!R||B.on)return;const n=R.trials.find(x=>x.t>t+.05);if(n)t=Math.max(0,n.t-1);else{setRun((D.runs.indexOf(R)+1)%D.runs.length)}draw()};
