@@ -942,7 +942,7 @@ const B={on:false,ready:false,dev:null,rx:null,S:{},mtu:23,chunk:20,nr:true,out:
  clear(){this.sent=0;this.base=0;this.lastN=0;this.steps=[];this.tl=[];this.ch7=1500;this.calDone=null;this.holdUntil=performance.now()+1300},   // плата сама начнёт поток с нуля после 1 с тишины
  disconnect(){this.on=false;try{this.dev&&this.dev.gatt.connected&&this.dev.gatt.disconnect()}catch(e){}this.reset('Плата отключена. Через 1 с без данных она сама вернёт CH7 в 1500.')},
  lost(){if(!this.on)return;this.on=false;this.reset('Связь с платой потеряна. Плата сама вернёт CH7 в 1500 через 1 с. Подключи снова.')},
- reset(msg){ticker(false);this.ready=false;this.out=[];this.outLen=0;this.busy=false;this.ch7=1500;
+ reset(msg){ticker(false);this.ready=false;this.wantPlay=false;$('play').textContent=playing?'⏸ Пауза':'▶ Пуск';this.out=[];this.outLen=0;this.busy=false;this.ch7=1500;
   $('bconn').style.display='';$('bdisc').style.display='none';$('speed').disabled=false;this.status(msg);draw()},
  status(h){$('bst').innerHTML=h},
  data(dv){this.inbuf+=new TextDecoder().decode(dv);let i;while((i=this.inbuf.indexOf('\n'))>=0){const l=this.inbuf.slice(0,i).replace(/\r$/,'');this.inbuf=this.inbuf.slice(i+1);if(l)this.line(l)}},
@@ -961,10 +961,14 @@ const B={on:false,ready:false,dev:null,rx:null,S:{},mtu:23,chunk:20,nr:true,out:
  late(){clearTimeout(this.lt);this.lt=setTimeout(()=>{draw();this.ui()},150)},   // хвост решений после остановки потока
  check(){const h=this.hello||{};this.ready=false;
    if(!h.v||h.v<3||h.mode!=='feet'||!h.pulse){this.status('На плате старая прошивка neuro_mi. Залей neuro_mi v3.1.');return}
-   if(h.model!==D.model){this.status(`В плате модель <b>${h.model}</b>, а на странице выбрана запись <b>${D.model}</b>. Выбери ${h.model} в списке записей (или перепрошей плату).`);return}
+   if(h.model!==D.model){                                                       // запись на странице — та, что зашита в плату
+    if([...$('model').options].some(o=>o.value===h.model)){this.status(`В плате модель <b>${h.model}</b> — переключаю запись на неё…`);play(false);load(h.model);return}
+    this.status(`В плате модель <b>${h.model}</b>, такой записи на странице нет. Обнови страницу или перепрошей плату.`);return}
+   if(!this.cur()){this.loadStream().then(()=>{if(this.on&&this.hello===h)this.check()}).catch(e=>this.status('Не загрузилась запись для платы: '+e.message));return}   // поток этой записи ещё не скачан
    this.ready=true;
    this.status(`Плата <b>${h.model}</b> на связи (MTU ${this.mtu}${this.mtu<=23?' — маленький пакет, поток может идти медленнее реального времени':''}). `+
-    `Нажми «Пуск»: на плату пойдут только сырые ЭЭГ в реальном времени (${fmt(D.dur)})${D.cal_s?`, первые ${D.cal_s} с плата калибруется по фону`:''}. Толчки CH7 на пульт даёт плата.`)},
+    `Нажми «Пуск»: на плату пойдут только сырые ЭЭГ в реальном времени (${fmt(D.dur)})${D.cal_s?`, первые ${D.cal_s} с плата калибруется по фону`:''}. Толчки CH7 на пульт даёт плата.`);
+   if(this.wantPlay){this.wantPlay=false;play(true)}},
  pump(time){if(!this.on||!this.ready||!this.cur()||performance.now()<this.holdUntil)return;
   const S=this.cur().run,target=Math.min(S.n,Math.floor(time*D.fs)),nb=this.cur().nch*2;
   while(this.sent<target){const i=this.sent,j=Math.min(i+4,target);if(j-i<4&&target<S.n)break;      // блок по 4 отсчёта
@@ -1008,7 +1012,9 @@ function tick(){if(!B.on||!playing)return;const now=performance.now(),dt=Math.mi
 function ticker(on){if(on&&!tickW){try{tickW=new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),20)'],{type:'text/javascript'})));
   tickW.onmessage=tick}catch(e){tickW=setInterval(tick,20)}tickLast=performance.now()}
  else if(!on&&tickW){if(tickW.terminate)tickW.terminate();else clearInterval(tickW);tickW=null}}
-function play(on){if(!D)return;if(on&&t>=D.dur)restart();
+function play(on){if(!D)return;
+ if(on&&B.on&&!B.ready){B.wantPlay=true;$('play').textContent='▶ Пуск — жду плату';return}   // плата не готова: запустим, когда будет готова
+ if(on&&t>=D.dur)restart();
  if(on&&B.on&&t>0&&!playing&&performance.now()-B.lastWrite>900){restart()}          // пауза дольше 1 с — плата сбросилась: заново
  playing=on&&!!D;$('play').textContent=playing?'⏸ Пауза':'▶ Пуск';$('model').disabled=playing;
  if(playing&&!raf){last=performance.now();raf=requestAnimationFrame(loop)}
