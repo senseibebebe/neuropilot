@@ -251,11 +251,13 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
 <!-- ===================== ЭЭГ демо: чужая открытая запись → (плата neuro_mi) → команда, без подсказок ===================== -->
 <section id="demo" class="off">
 <div class="card warnbox">
-  <b>Это не наша гарнитура.</b> Чужая открытая запись из базы PhysioNet EEGMMIDB: испытуемый <b id="d-subj">—</b>, запись <b id="d-runN">—</b>,
-  64 электрода по всей голове (модель берёт 21 над моторной корой), 160 Гц. Человек по подсказке на экране <b>представлял</b>
-  сжатие левого или правого кулака, не двигаясь. <b>Модель получает только сырые ЭЭГ</b> — ни подсказок, ни их моментов:
-  каждые 1/8 с она сама решает, «движение» сейчас или покой и какая рука. Подсказки видите только вы — чтобы сверить.
-  <b>На BrainLink так не работает</b>: у неё один электрод на лбу (Fp1), а этот сигнал рождается над моторной корой (C3, C4).
+  <b>Это не наша гарнитура.</b> Чужая открытая запись из базы PhysioNet EEGMMIDB: испытуемый <b id="d-subj">—</b>,
+  64 электрода по всей голове (модель берёт 21 над макушкой и моторной корой), 160 Гц. Сначала минута покоя, затем
+  запись <b id="d-runN">—</b>: по подсказке на экране человек <b>представлял</b> движение обеих <b>ног</b> или обеих <b>рук</b>, не двигаясь.
+  <b>Ноги → команда</b>, руки и покой → ничего: в полёте руки на стиках, глаза на дроне, а ноги свободны.
+  <b>Модель получает только сырые ЭЭГ</b> — ни подсказок, ни их моментов. Первые 30 с — калибровка по фону
+  (человек в покое), дальше каждые 1/8 с модель сама решает. Подсказки видите только вы — чтобы сверить.
+  <b>На BrainLink так не работает</b>: у неё один электрод на лбу, а этот сигнал — над макушкой.
 </div>
 
 <div class="card">
@@ -274,23 +276,23 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
   <div id="d-board">
     <div class="row" style="margin-top:12px"><button class="big" id="d-bconn" disabled>Подключить плату neuro_mi (Bluetooth)</button>
       <button id="d-bdisc" style="display:none">Отключить плату</button></div>
-    <div class="muted" id="d-bst" style="margin-top:6px">С платой <b>neuro_mi</b> телефон шлёт ей только сырые отсчёты ЭЭГ по Bluetooth; модель на плате
-      решает сама и ставит CH7 в тренерский порт пульта. На графике и в поле команды — тогда решения <b>платы</b>.
+    <div class="muted" id="d-bst" style="margin-top:6px">С платой <b>neuro_mi</b> телефон шлёт ей только сырые отсчёты ЭЭГ по Bluetooth;
+      плата калибруется, решает сама и ставит CH7 в тренерский порт пульта. На графике и в поле команды — тогда решения <b>платы</b>.
       Без платы страница показывает тот же расчёт, сделанный заранее на компьютере (он совпадает с платой шаг в шаг).</div>
     <div id="d-bkv" class="bkv" style="display:none"></div>
   </div>
   <div class="muted" style="margin-top:8px">
-    <b>Что на графике.</b> Сверху — сигнал трёх электродов после фильтра 8–30 Гц (общий масштаб): C3 и C4 над моторной корой,
-    Fp1 — там, где электрод BrainLink. Ниже — признаки модели «левая/правая»: мощность ритма за последние 2 с на двух
-    «виртуальных электродах», собранных из 21 электрода: <span class="sw o"></span><b>у C4</b> (правое полушарие) и
-    <span class="sw b"></span><b>у C3</b> (левое). Ещё ниже — <b>вероятность «движения»</b> (пунктир — порог <span id="d-thrT">0,7</span>)
-    и <b>команда</b> во времени.<br>
-    <b>Искать надо не всплеск, а затухание.</b> В покое над моторной корой идёт мю-ритм (8–13 Гц) — это крупные «пачки» волн
-    на C3/C4. Когда человек представляет движение руки, ритм над противоположным полушарием затихает: левая рука → падает
-    <span class="sw o"></span>у C4, правая → <span class="sw b"></span>у C3. Модель ловит это затухание в окне 2 с.<br>
-    <b>Когда команда.</b> Если <span id="d-kT">6</span> шагов подряд (<span id="d-kS">0,75</span> с) вероятность движения выше порога и одна рука
-    вероятнее <span id="d-phT">0,6</span>: <b>левая → НАЗАД (CH7 1000)</b>, <b>правая → ВПЕРЁД (CH7 2000)</b>. Движение пропало — 1500.
-    Модель (CSP + LDA) обучена на записях <span id="d-trainT">—</span> этого человека, эту запись не видела.</div>
+    <b>Что на графике.</b> Сверху — сигнал трёх электродов после фильтра 8–30 Гц (общий масштаб): Cz на макушке (там «ноги»),
+    C3 и C4 над моторной корой рук. Ниже — мощность ритма 8–30 Гц за последние 2 с, в децибелах к калибровке:
+    <span class="sw b"></span><b>у Cz</b> и <span class="sw o"></span><b>у C3/C4</b>. Ещё ниже — <b>вероятность «ноги»</b>
+    (пунктир — порог <span id="d-thrT">0,7</span>) и <b>команда</b> во времени. Серым фоном — калибровка и долгий покой,
+    синим — попытки «ноги», оранжевым — попытки «руки».<br>
+    <b>Что ловит модель.</b> Когда человек представляет движение рук, ритм над руками (C3/C4) сильно затихает. Когда ног —
+    у этого человека ритм над руками, наоборот, чуть <b>усиливается</b>, а у Cz почти не меняется: зона рук «отдыхает», пока
+    занята зона ног. Модель учитывает всю картину по 21 электроду (ковариация 21×21, приведённая к фону калибровки).<br>
+    <b>Когда команда.</b> Вероятность «ноги» выше порога <span id="d-kT">6</span> шагов подряд (<span id="d-kS">0,75</span> с) →
+    <b>ВПЕРЁД (CH7 2000)</b>; ниже порога → 1500. Модель обучена на записях <span id="d-trainT">—</span> этого человека,
+    запись <span id="d-runN2">—</span> не видела.</div>
 </div>
 
 <div class="card">
@@ -303,12 +305,12 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
   <h2>Насколько это типично</h2>
   <div class="muted" id="d-this" style="margin-bottom:8px"></div>
   <div style="overflow-x:auto"><table>
-    <thead><tr><th>Без подсказок, <span id="d-subj2">—</span></th><th class="n">Верно</th><th class="n">Неверно</th><th class="n">Нет команды</th><th class="n">Ложных в покое</th></tr></thead>
+    <thead><tr><th><span id="d-subj2">—</span>, без подсказок</th><th class="n">Ноги пойманы</th><th class="n">Ложных: паузы</th><th class="n">«Руки»</th><th class="n">Долгий покой</th></tr></thead>
     <tbody id="d-loro"></tbody>
   </table></div>
-  <div class="muted" style="margin:6px 0 12px">Каждая запись проверена моделью, обученной на двух других. В плате — модель для записи R12.</div>
+  <div class="muted" style="margin:6px 0 12px">Каждая запись проверена моделью, обученной на двух других. В плате — модель для записи R14.</div>
   <div style="overflow-x:auto"><table>
-    <thead><tr><th>С подсказками, 105 человек</th><th class="n">Медиана</th><th class="n">Выше случайности</th></tr></thead>
+    <thead><tr><th>Все люди базы, без подсказок, порог заранее</th><th class="n">Ноги пойманы</th><th class="n">Ложных в минуту</th><th class="n">Работает у</th></tr></thead>
     <tbody id="d-tab"></tbody>
   </table></div>
   <div class="muted" id="d-note" style="margin-top:8px"></div>
@@ -316,7 +318,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
     Schalk G. et al. BCI2000: A General-Purpose Brain-Computer Interface (BCI) System. IEEE TBME 51(6):1034–1043, 2004.
     Goldberger A. et al. PhysioBank, PhysioToolkit, and PhysioNet. Circulation 101(23):e215–e220, 2000.
     <a href="https://physionet.org/content/eegmmidb/1.0.0/" target="_blank" rel="noopener">physionet.org/content/eegmmidb</a>.
-    Расчёт: rc-neuro/tools/eegmmidb и tools/neuro_mi в репозитории проекта.</div>
+    Расчёт: rc-neuro/tools/neuro_mi (feet_model.py, mi_feet.py) в репозитории проекта.</div>
 </div>
 </section>
 </main>
@@ -773,7 +775,7 @@ return {onLine,onDisc:()=>{fbTone(false);chips()},gesture:soundAuto,redraw:()=>{
 })();
 </script>
 <script>
-// ===================== ЭЭГ демо: чужая запись → модель (на плате neuro_mi или расчёт страницы) → команда, без подсказок =====================
+// ===================== ЭЭГ демо: чужая запись → модель «ноги» (на плате neuro_mi или расчёт страницы) → команда, без подсказок =====================
 const DEMO=(()=>{
 const $=id=>document.getElementById('d-'+id);
 const URL_DATA='eeg_demo.json';
@@ -783,123 +785,140 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function b64i8(s){const b=atob(s),a=new Int8Array(b.length);for(let i=0;i<b.length;i++)a[i]=(b.charCodeAt(i)<<24)>>24;return a}
 const kOf=e=>(e-D.nwin)/D.step, eOf=k=>D.nwin+k*D.step;   // шаг решения ↔ отсчёт, которым кончается окно 2 с
+const LABV={rest:0,H:1,F:2,cal:3,idle:4};
 async function load(){if(D||loading)return;loading=true;
  try{const r=await fetch(URL_DATA);if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
  catch(e){$('load').textContent='Не загрузилась запись ('+e.message+'). Нужен доступ к сайту хотя бы один раз; при открытии файла с диска браузер её не отдаёт.';loading=false;return}
  loading=false;$('load').style.display='none';
  for(const c in D.traces)tr[c]={a:b64i8(D.traces[c].b64),sc:D.traces[c].scale_uV};
  const n=Math.round(D.dur*D.fs);lab=new Int8Array(n);                         // метки — только для показа и оценки
- for(const c of D.cues){const a=Math.round(c.t*D.fs),b=Math.min(n,Math.round((c.t+c.d)*D.fs)),v=c.lab==='L'?1:c.lab==='R'?2:0;lab.fill(v,a,b)}
- trials=D.cues.filter(c=>c.lab!=='rest').map(c=>({i:Math.round(c.t*D.fs),t:c.t,d:c.d,lab:c.lab==='L'?1:2}));
- const [a,b]=rng(D.fR.concat(D.fL),.01,.99);D.fmin=a-.5;D.fmax=b+.5;
- $('subj').textContent=D.subject;$('subj2').textContent=D.subject+', запись по одной';$('runN').textContent=D.run;$('trainT').textContent=D.train.replace(' ',' и ');
- $('thrT').textContent=dec(D.p_task);$('phT').textContent=dec(D.p_hand);$('kT').textContent=D.k;$('kS').textContent=dec(D.k*D.step/D.fs,2);
+ for(const c of D.cues){const a=Math.round(c.t*D.fs),b=Math.min(n,Math.round((c.t+c.d)*D.fs));lab.fill(LABV[c.lab],a,b)}
+ trials=D.cues.filter(c=>c.lab==='F'||c.lab==='H').map(c=>({i:Math.round(c.t*D.fs),t:c.t,d:c.d,lab:c.lab}));
+ const pw=D.pz.concat(D.ph).filter(v=>v!==null),[a,b]=rng(pw,.005,.995);D.wmin=Math.floor(a-1);D.wmax=Math.ceil(b+1);
+ $('subj').textContent=D.subject;$('subj2').textContent=D.subject;$('runN').textContent=D.run;$('runN2').textContent=D.run;
+ $('trainT').textContent=D.train.replace(' ',' и ');$('thrT').textContent=dec(D.p);$('kT').textContent=D.k;$('kS').textContent=dec(D.k*D.step/D.fs,2);
  $('play').disabled=false;$('next').disabled=false;$('bconn').disabled=!navigator.bluetooth;
  if(!navigator.bluetooth)$('bst').innerHTML+=' <b>Этот браузер не умеет Bluetooth</b> — нужен Chrome на Android (или на компьютере).';
  summary();t=0;draw();drawAvg()}
 function rng(a,lo,hi){const s=[...a].sort((x,y)=>x-y);return[s[Math.floor(s.length*lo)],s[Math.min(s.length-1,Math.floor(s.length*hi))]]}
-// ---------- оценка команд по подсказкам (как M.score в tools/neuro_mi/mi_model.py) ----------
+// ---------- оценка команд по подсказкам (как evaluate в tools/neuro_mi/feet_model.py) ----------
 // tl — команды во времени: [[конец окна (отсчёт), ch7], …] по возрастанию; upTo — оценивать только то, что уже видно
-function score(tl,upTo){const res=[];let fals=0,prev=1500;
- for(const [e,c] of tl){if(e>upTo)break;if(c!==1500&&prev===1500){let rest=true;for(let j=Math.max(0,e-D.fs/2);j<e;j++)if(lab[j]){rest=false;break}if(rest)fals++}prev=c}
- for(const x of trials){const end=x.i+Math.round(4.1*D.fs)+D.fs/2;if(x.i>upTo)break;let first=0;
-  for(const [e,c] of tl){if(e<x.i)continue;if(e>=end||e>upTo)break;if(c!==1500){first=c;break}}
-  const want=x.lab===1?1000:2000,done=end<=upTo;
-  res.push({x,cmd:first,res:first?(first===want?'ok':'wrong'):(done?'none':'wait')})}
- return{res,fals}}
+const AFTER=2;                                            // с после конца попытки, когда команда ещё засчитана
+function score(tl,upTo){const calN=D.cal_s*D.fs,n0=D.n0,win=x=>[x.i,x.i+Math.round((4.1+AFTER)*D.fs)];
+ let hit=0,nf=0,fpIdle=0,fpGap=0,fpHand=0,prev=1500;
+ const owner=e=>{for(const x of trials){const [a,b]=win(x);if(e>=a&&e<b)return x;if(x.i>e)break}return null};
+ for(const [e,c] of tl){if(e>upTo)break;
+  if(c!==1500&&prev===1500){const x=owner(e);
+   if(e-D.nwin>=calN&&e<=n0)fpIdle++;
+   else if(x){if(x.lab==='H')fpHand++}
+   else if(e>n0+D.nwin)fpGap++}
+  prev=c}
+ for(const x of trials){if(x.lab!=='F')continue;const [a,b]=win(x);if(a>upTo)break;let got=false;   // пойманную считаем сразу
+  for(const [e,c] of tl){if(e<a)continue;if(e>=b||e>upTo)break;if(c!==1500){got=true;break}}
+  if(got){hit++;nf++}else if(b<=upTo)nf++}
+ return{hit,nf,fpIdle,fpGap,fpHand}}
 function refTL(){return D.cmd.map((c,k)=>[eOf(k),c])}
-function summary(){const G=D.group,T=D.this,R=D.ref;
- $('this').innerHTML=`Испытуемый ${D.subject} — один из лучших по задаче с подсказками (${pct(T.acc_csp_central21)} на 21 центральном электроде; <b>${pct(T.acc_fp1)} на одном Fp1</b> — уровень случайности). `+
-  `Без подсказок на записи ${D.run} модель даёт: верно <b>${R.ok} из ${R.n}</b>, неверно ${R.wrong}, без команды ${R.none}, ложных включений в покое ${R.false} за ${fmt(D.dur)}.`;
- $('loro').innerHTML=Object.entries(D.loro).map(([r,v])=>`<tr><td>${r}${r===D.run?' (в плате)':''}</td><td class="n"><b>${v.ok}</b> из ${v.n}</td><td class="n">${v.wrong}</td><td class="n">${v.none}</td><td class="n">${v.false} за ${fmt(v.sec)}</td></tr>`).join('');
- const rows=[['64 электрода, CSP + LDA',G.csp64],['21 центральный FC/C/CP, CSP + LDA',G.csp_central21],['3 над моторной корой C3, Cz, C4',G.c3czc4],['17 лобных Fp/AF/F, CSP + LDA',G.csp_frontal17],['1 лобный Fp1 — как BrainLink',G.fp1]];
- $('tab').innerHTML=rows.map(([n,v])=>`<tr><td>${n}</td><td class="n">${pct(v.median)}</td><td class="n"><b>${v.above}</b> из ${G.n}</td></tr>`).join('');
- const A=D.alpha;$('note').innerHTML=`«С подсказками» — решение раз в попытку, через 2,5 с после подсказки (задача 8). «Выше случайности» — точность не ниже ${pct(G.chance)} (45 попыток, p &lt; 0,05); случайно так выходит примерно у 5 человек из 105. `+
-  (A?`Альфа-ритм «закрыл глаза»: затылок O1/Oz/O2 — ${A.above_O} из ${A.n}, Fp1 — ${A.above_Fp1} из ${A.n}. `:'')+
-  (D.precue?`Проверка на утечку: по окну, которое кончается в момент подсказки, рука угадывается у ${D.precue.above_pre} из ${D.precue.n} — как случайно.`:'')}
+function summary(){const R=D.ref,S=D.screen,G=D.group,H=D.hands;
+ $('this').innerHTML=`${D.subject} выбран не по итогу, а <b>проверкой калибровки</b>, как в ЭМГ: модель учится на одной записи и проверяется на другой. `+
+  `Из ${S.n} человек базы её прошли ${S.people}. На записи ${D.run}, которую модель не видела: поймано <b>${R.hit} из ${R.n_feet}</b> попыток «ноги», `+
+  `ложных включений — ${R.fp_idle} в долгом покое, ${R.fp_gap} в паузах, ${R.fp_hand} во время попыток «руки». Задержка от подсказки — ${dec(R.lat)} с.`;
+ $('loro').innerHTML=Object.entries(D.loro).map(([r,v])=>`<tr><td>${r}${r===D.run?' (в плате)':''}</td><td class="n"><b>${v.hit}</b> из ${v.n}</td><td class="n">${v.fp_gap}</td><td class="n">${v.fp_hand}</td><td class="n">${v.fp_idle}</td></tr>`).join('');
+ const rows=[['Римановская, ноги против покоя и рук — как в плате','F3x'],['CSP + LDA, ноги против покоя и рук','F1x'],['CSP + LDA, ноги против покоя','F1'],['Бета-вспышка над Cz, без обучения','F2']];
+ $('tab').innerHTML=rows.map(([nm,k])=>`<tr><td>${nm}</td><td class="n">${pct(G[k].hit)}</td><td class="n">${dec(G[k].fp)}</td><td class="n"><b>${G[k].works}</b> из ${G[k].N}</td></tr>`).join('');
+ $('note').innerHTML=`${G.F3x.N} человек, у каждого три проверки. «Ложных в минуту» — паузы между попытками, попытки «руки» и минута долгого покоя вместе. `+
+  `«Работает у» — поймано не меньше 70 % попыток «ноги» при не больше 1 ложном в минуту. <b>У большинства людей так не работает</b>: люди этой базы `+
+  `ни разу не тренировались и сделали по 45 попыток. Проверка калибровки отобрала ${S.people} человек; у них на записи, которой модель не видела, поймано `+
+  `${pct(S.hit)} при ${dec(S.fp)} ложных в минуту. Для сравнения, «левая/правая рука» без подсказок: верно ${pct(H.ok)}, неверно ${pct(H.wr)}, `+
+  `в долгом покое ${dec(H.fp_idle)} ложных в минуту, работает у ${H.works} из ${H.n}. Оговорки: в записи ${D.run} всего ${D.ref.n_feet} попыток «ноги»; `+
+  `«руки» — воображение, а не настоящее движение пальцев на стиках; никто в базе дроном не управлял.`}
 function cueAt(time){for(const c of D.cues)if(time>=c.t&&time<c.t+c.d)return c;return null}
-function ui(){const cue=cueAt(t),cl=cue&&cue.lab!=='rest'?cue.lab:'',upTo=Math.floor(t*D.fs);
- $('cue').className=cl;$('cueT').textContent=!cue?'—':cue.lab==='L'?'Представь: ЛЕВАЯ рука':cue.lab==='R'?'Представь: ПРАВАЯ рука':'Отдых';
+const CUE={cal:'Калибровка: покой',idle:'Покой',rest:'Отдых',F:'Представь: НОГИ',H:'Представь: РУКИ'};
+function ui(){const cue=cueAt(t),cl=cue?cue.lab:'',upTo=Math.floor(t*D.fs),calN=D.cal_s*D.fs;
+ $('cue').className=cl==='F'?'R':cl==='H'?'L':'';$('cueT').textContent=cue?CUE[cl]:'—';
  let v=1500;
  if(B.on){v=B.ch7;$('cmdH').textContent='Команда платы (CH7 на пульт)'}
  else{const k=Math.floor((upTo-D.nwin)/D.step);v=k>=0&&k<D.cmd.length?D.cmd[k]:1500;$('cmdH').textContent='Команда модели (расчёт, как в плате)'}
- $('cmd').className=v===1000?'c1000':v===2000?'c2000':'';
- $('cmdT').textContent=v===1000?'НАЗАД · CH7 1000':v===2000?'ВПЕРЁД · CH7 2000':'CH7 1500';
- $('cmdV').textContent=v!==1500?(cl?((v===1000)===(cl==='L')?'✓ совпадает с подсказкой':'✗ подсказка — другая рука'):'⚠ команда в покое'):(cl?'ждёт уверенности':'покой');
- $('pos').innerHTML=`${D.run} · ${fmt(t)} / ${fmt(D.dur)}`;
- const S=score(B.on?B.tl:refTL(),upTo),c=k=>S.res.filter(r=>r.res===k).length,dn=S.res.filter(r=>r.res!=='wait').length;
- $('score').innerHTML=(B.on?'плата: ':'')+(dn||S.fals?`верно <b>${c('ok')} из ${dn}</b> · неверно ${c('wrong')} · без команды ${c('none')} · в покое ${S.fals}`:'решений ещё нет')}
-function series(g,vals,k0,t0,tEnd,X,Y){g.beginPath();let first=true;for(let k=0;k<vals.length;k++){const tt=eOf(k0+k)/D.fs;if(tt<t0||tt>tEnd)continue;const x=X(tt),y=Y(vals[k]);first?(g.moveTo(x,y),first=false):g.lineTo(x,y)}g.stroke()}
+ $('cmd').className=v===2000?'c2000':'';
+ $('cmdT').textContent=v===2000?'ВПЕРЁД · CH7 2000':'CH7 1500';
+ $('cmdV').textContent=upTo<=calN?'калибровка по фону — решений ещё нет':v===2000?(cl==='F'?'✓ подсказка — ноги':cl==='H'?'✗ подсказка — руки':'⚠ команда в покое'):(cl==='F'?'ждёт уверенности':'покой');
+ $('pos').innerHTML=`${upTo<D.n0?D.cal_run+' (покой)':D.run} · ${fmt(t)} / ${fmt(D.dur)}`;
+ const S=score(B.on?B.tl:refTL(),upTo);
+ $('score').innerHTML=(B.on?'плата: ':'')+(upTo>calN?`ноги <b>${S.hit} из ${S.nf}</b> · ложных: покой ${S.fpIdle}, паузы ${S.fpGap}, «руки» ${S.fpHand}`:'калибровка…')}
+function series(g,vals,t0,tEnd,X,Y){g.beginPath();let first=true;for(let k=0;k<vals.length;k++){const v=vals[k],tt=eOf(k)/D.fs;if(v===null||tt<t0||tt>tEnd){first=true;continue}const x=X(tt),y=Y(v);first?(g.moveTo(x,y),first=false):g.lineTo(x,y)}g.stroke()}
 function draw(){if(!D)return;ui();const cv=$('plot'),dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
  if(!W)return;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
- const SPAN=W<500?6:10,t1=Math.max(t,SPAN),t0=t1-SPAN,L=50,PW=W-L-4,X=s=>L+(s-t0)/SPAN*PW;
+ const SPAN=W<500?8:14,t1=Math.max(t,SPAN),t0=t1-SPAN,L=50,PW=W-L-4,X=s=>L+(s-t0)/SPAN*PW;
  const ink=css('--ink'),ink2=css('--ink2'),line=css('--line'),blue=css('--blue'),orange=css('--orange'),grey=css('--grey');
- const F='-apple-system,Segoe UI,Roboto,sans-serif',lanes=[['C3',0,34],['C4',34,34],['FP1',68,34]];
+ const F='-apple-system,Segoe UI,Roboto,sans-serif',lanes=[['Cz',0,34],['C3',34,34],['C4',68,34]];
  const fTop=112,fH=78,pTop=fTop+fH+12,pH=58,cTop=pTop+pH+12,cH=H-cTop-16;
- for(const c of D.cues){if(c.lab==='rest'||c.t+c.d<t0||c.t>t1)continue;g.fillStyle=c.lab==='L'?orange:blue;g.globalAlpha=.12;   // подсказки — фоном (только для человека)
-  g.fillRect(Math.max(L,X(c.t)),0,Math.min(X(c.t+c.d),L+PW)-Math.max(L,X(c.t)),H-16);g.globalAlpha=1}
+ for(const c of D.cues){if(c.lab==='rest'||c.t+c.d<t0||c.t>t1)continue;                 // подсказки — фоном (только для человека)
+  g.fillStyle=c.lab==='F'?blue:c.lab==='H'?orange:grey;g.globalAlpha=c.lab==='F'||c.lab==='H'?.12:.10;
+  const xa=Math.max(L,X(c.t)),xb=Math.min(X(c.t+c.d),L+PW);g.fillRect(xa,0,xb-xa,H-16);g.globalAlpha=1;
+  if(c.lab==='cal'||c.lab==='idle'){g.fillStyle=ink2;g.font='11px '+F;g.textBaseline='top';g.fillText(c.lab==='cal'?'калибровка по фону':'долгий покой',xa+4,cTop+2)}}
  g.font='12px '+F;g.textBaseline='middle';
- const fs=D.fs_trace,i0=Math.max(0,Math.floor(t0*fs)),i1=Math.min(tr.C3.a.length,Math.floor(Math.min(t,t1)*fs));
+ const fs=D.fs_trace,i0=Math.max(0,Math.floor(t0*fs)),i1=Math.min(tr.Cz.a.length,Math.floor(Math.min(t,t1)*fs));
  for(const [c,y0,h] of lanes){const a=tr[c].a,mid=y0+h/2;g.strokeStyle=line;g.lineWidth=1;g.beginPath();g.moveTo(L,mid);g.lineTo(L+PW,mid);g.stroke();
-  g.fillStyle=ink2;g.fillText(c==='FP1'?'Fp1':c,6,mid);g.strokeStyle=c==='FP1'?ink2:ink;g.lineWidth=1;g.beginPath();
+  g.fillStyle=ink2;g.fillText(c,6,mid);g.strokeStyle=ink;g.lineWidth=1;g.beginPath();
   const stp=Math.max(1,Math.floor((i1-i0)/(PW*2)));for(let i=i0;i<i1;i+=stp){const x=L+(i/fs-t0)/SPAN*PW,y=mid-a[i]/127*(h/2-2);i===i0?g.moveTo(x,y):g.lineTo(x,y)}g.stroke()}
- g.fillStyle=ink2;g.font='11px '+F;g.fillText('±'+Math.round(127*tr.C3.sc)+' мкВ',6,106);
- // признаки «левая/правая»
- const fy=v=>fTop+fH-(Math.max(D.fmin,Math.min(D.fmax,v))-D.fmin)/(D.fmax-D.fmin)*fH;
- g.fillText('признаки',6,fTop+8);g.fillText('руки',6,fTop+21);
- g.lineWidth=2.5;g.strokeStyle=orange;series(g,D.fR,0,t0,t,X,fy);g.strokeStyle=blue;series(g,D.fL,0,t0,t,X,fy);
+ g.fillStyle=ink2;g.font='11px '+F;g.fillText('±'+Math.round(127*tr.Cz.sc)+' мкВ',6,106);
+ // мощность ритма у Cz и у C3/C4, дБ к калибровке
+ const fy=v=>fTop+fH-(Math.max(D.wmin,Math.min(D.wmax,v))-D.wmin)/(D.wmax-D.wmin)*fH;
+ g.fillText('мощность',6,fTop+8);g.fillText('дБ',6,fTop+21);
+ if(D.wmin<0&&D.wmax>0){g.strokeStyle=line;g.lineWidth=1;g.beginPath();g.moveTo(L,fy(0));g.lineTo(L+PW,fy(0));g.stroke()}
+ g.lineWidth=2.5;g.strokeStyle=orange;series(g,D.ph,t0,t,X,fy);g.strokeStyle=blue;series(g,D.pz,t0,t,X,fy);
  const kNow=Math.floor((Math.min(t,t1)*D.fs-D.nwin)/D.step);
- if(kNow>=0&&kNow<D.fR.length){g.font='bold 12px '+F;g.textAlign='right';const yR=fy(D.fR[kNow]),yL=fy(D.fL[kNow]),sep=Math.abs(yR-yL)<14?(yR<yL?-7:7):0;
-  g.fillStyle=orange;g.fillText('у C4',X(t)-4,yR+sep);g.fillStyle=blue;g.fillText('у C3',X(t)-4,yL-sep);g.textAlign='left'}
- // вероятность «движения»
- const py=p=>pTop+pH-p*pH;g.font='11px '+F;g.fillStyle=ink2;g.fillText('p(движ.)',6,pTop+pH/2);
+ if(kNow>=0&&kNow<D.pz.length&&D.pz[kNow]!==null){g.font='bold 12px '+F;g.textAlign='right';const yz=fy(D.pz[kNow]),yh=fy(D.ph[kNow]),sep=Math.abs(yz-yh)<14?(yz<yh?-7:7):0;
+  g.fillStyle=blue;g.fillText('у Cz',X(t)-4,yz+sep);g.fillStyle=orange;g.fillText('у C3/C4',X(t)-4,yh-sep);g.textAlign='left'}
+ // вероятность «ноги»
+ const py=p=>pTop+pH-p*pH;g.font='11px '+F;g.fillStyle=ink2;g.fillText('p(ноги)',6,pTop+pH/2);
  g.strokeStyle=line;g.lineWidth=1;g.beginPath();g.moveTo(L,pTop+pH);g.lineTo(L+PW,pTop+pH);g.stroke();
- g.strokeStyle=ink2;g.setLineDash([4,3]);g.beginPath();g.moveTo(L,py(D.p_task));g.lineTo(L+PW,py(D.p_task));g.stroke();g.setLineDash([]);
- if(B.on){g.strokeStyle=grey;g.lineWidth=1.5;series(g,D.pt,0,t0,t,X,py);
-  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();let f=true;for(const s of B.steps){const tt=s.e/D.fs;if(tt<t0||tt>t)continue;const x=X(tt),y=py(s.pt);f?(g.moveTo(x,y),f=false):g.lineTo(x,y)}g.stroke()}
- else{g.strokeStyle=ink;g.lineWidth=2;series(g,D.pt,0,t0,t,X,py)}
+ g.strokeStyle=ink2;g.setLineDash([4,3]);g.beginPath();g.moveTo(L,py(D.p));g.lineTo(L+PW,py(D.p));g.stroke();g.setLineDash([]);
+ if(B.on){g.strokeStyle=grey;g.lineWidth=1.5;series(g,D.pf,t0,t,X,py);
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();let f=true;for(const s of B.steps){const tt=s.e/D.fs;if(tt<t0||tt>t)continue;const x=X(tt),y=py(s.pf);f?(g.moveTo(x,y),f=false):g.lineTo(x,y)}g.stroke()}
+ else{g.strokeStyle=ink;g.lineWidth=2;series(g,D.pf,t0,t,X,py)}
  // команда во времени: плата (если подключена) и расчёт страницы
  const rows=B.on?[['плата',B.tl],['расчёт',refTL()]]:[['команда',refTL()]],rh=cH/rows.length;
- rows.forEach(([name,tl],r)=>{const y0=cTop+r*rh;g.fillStyle=ink2;g.font='11px '+F;g.fillText(name,6,y0+rh/2);
+ rows.forEach(([name,tl],r)=>{const y0=cTop+r*rh;g.fillStyle=ink2;g.font='11px '+F;g.textBaseline='middle';g.fillText(name,6,y0+rh/2);
   g.strokeStyle=line;g.beginPath();g.moveTo(L,y0+rh-1);g.lineTo(L+PW,y0+rh-1);g.stroke();
   const w=Math.max(1,D.step/D.fs/SPAN*PW+0.5);
-  for(const [e,c] of tl){const tt=e/D.fs;if(c===1500||tt<t0-D.step/D.fs||tt>t)continue;g.fillStyle=c===1000?orange:blue;g.fillRect(X(tt-D.step/D.fs),y0+3,w,rh-7)}});
+  for(const [e,c] of tl){const tt=e/D.fs;if(c===1500||tt<t0-D.step/D.fs||tt>t)continue;g.fillStyle=blue;g.fillRect(X(tt-D.step/D.fs),y0+3,w,rh-7)}});
  g.fillStyle=ink2;g.font='11px '+F;g.textBaseline='alphabetic';
- for(let s=Math.ceil(t0);s<=t1;s+=SPAN>6?2:1){const x=X(s);g.fillText(fmt(s),Math.min(Math.max(L,x-10),W-30),H-2)}
+ for(let s=Math.ceil(t0);s<=t1;s+=SPAN>8?2:1){const x=X(s);g.fillText(fmt(s),Math.min(Math.max(L,x-10),W-30),H-2)}
  g.strokeStyle=ink2;g.lineWidth=1;g.setLineDash([3,3]);g.beginPath();g.moveTo(X(t),0);g.lineTo(X(t),H-16);g.stroke();g.setLineDash([])}
-// среднее по попыткам: две панели (левая / правая рука)
+// среднее по попыткам: две панели (ноги / руки)
 function drawAvg(){if(!D||!D.avg)return;const cv=$('avg'),dpr=window.devicePixelRatio||1,W=cv.clientWidth;if(!W)return;
  const narrow=W<560;cv.style.height=(narrow?400:220)+'px';const H=cv.clientHeight;
  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);const A=D.avg,F='-apple-system,Segoe UI,Roboto,sans-serif',step=D.step/D.fs;
  const ink=css('--ink'),ink2=css('--ink2'),line=css('--line'),blue=css('--blue'),orange=css('--orange');
- const all=[A.L.featR,A.L.featL,A.R.featR,A.R.featL].flat(),mn=Math.floor(Math.min(...all)-.5),mx=Math.ceil(Math.max(...all)+.5);
- const n=A.L.featR.length,tEnd=A.t0+n*step,gap=narrow?0:14,PW=narrow?W-44:(W-44-gap)/2,cellH=narrow?H/2:H,PH=cellH-22-34;
+ const all=[A.F.cz,A.F.ch,A.H.cz,A.H.ch].flat(),mn=Math.floor(Math.min(...all)-.5),mx=Math.ceil(Math.max(...all)+.5);
+ const n=A.F.cz.length,tEnd=A.t0+n*step,gap=narrow?0:14,PW=narrow?W-44:(W-44-gap)/2,cellH=narrow?H/2:H,PH=cellH-22-34;
  const sg=v=>(v>0?'+':v<0?'−':'')+Math.abs(v);
- [['L','Левая рука',A.n_L],['R','Правая рука',A.n_R]].forEach(([lb,title,cnt],p)=>{
+ [['F','Ноги',A.n_F,blue],['H','Руки',A.n_H,orange]].forEach(([lb,title,cnt,col],p)=>{
   const x0=40+(narrow?0:p*(PW+gap)),top=(narrow?p*cellH:0)+22,X=s=>x0+(s-A.t0)/(tEnd-A.t0)*PW,Y=v=>top+PH-(v-mn)/(mx-mn)*PH;
-  g.fillStyle=lb==='L'?orange:blue;g.globalAlpha=.10;g.fillRect(X(0),top,X(Math.min(4.1,tEnd))-X(0),PH);g.globalAlpha=1;
+  g.fillStyle=col;g.globalAlpha=.10;g.fillRect(X(0),top,X(Math.min(4.1,tEnd))-X(0),PH);g.globalAlpha=1;
   g.strokeStyle=line;g.lineWidth=1;g.beginPath();g.moveTo(x0,top+PH);g.lineTo(x0+PW,top+PH);g.stroke();
   if(mn<0&&mx>0){g.beginPath();g.moveTo(x0,Y(0));g.lineTo(x0+PW,Y(0));g.stroke()}
-  g.font='bold 12px '+F;g.fillStyle=ink;g.textBaseline='alphabetic';g.fillText(`${title} (${cnt})`,x0,top-8);
-  for(const [vals,col] of [[A[lb].featR,orange],[A[lb].featL,blue]]){g.strokeStyle=col;g.lineWidth=2.5;g.beginPath();
+  g.font='bold 12px '+F;g.fillStyle=ink;g.textBaseline='alphabetic';g.fillText(`${title} (${cnt} попыток)`,x0,top-8);
+  for(const [vals,c] of [[A[lb].ch,orange],[A[lb].cz,blue]]){g.strokeStyle=c;g.lineWidth=2.5;g.beginPath();
    vals.forEach((v,k)=>{const x=X(A.t0+k*step),y=Y(v);k?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()}
   g.font='11px '+F;g.fillStyle=ink2;g.textBaseline='middle';g.fillText(sg(mx)+' дБ',0,top+5);g.fillText(sg(mn)+' дБ',0,top+PH-5);
   g.textBaseline='alphabetic';g.textAlign='center';
-  for(let s=-1;s<=4;s++)if(X(s)<=x0+PW+1)g.fillText(String(s).replace('-','−'),X(s),top+PH+13);
+  for(let s=-1;s<=5;s++)if(X(s)<=x0+PW+1)g.fillText(String(s).replace('-','−'),X(s),top+PH+13);
   g.fillText('подсказка',X(0),top+PH+27);g.textAlign='left';
   if(!narrow||p===1){g.textAlign='right';g.fillText('с',x0+PW,top+PH+27);g.textAlign='left'}});
  const at=a=>a[Math.max(0,Math.min(a.length-1,Math.round((2.5-A.t0)/step)-1))],f=v=>dec(v).replace('-','−');
- $('avgT').innerHTML=`Признаки модели «левая/правая» на записи ${D.run}, среднее по попыткам (${A.n_L} левых, ${A.n_R} правых): насколько мощность ритма изменилась `+
-  `по сравнению с секундой перед подсказкой. Через 2,5 с после подсказки: <b>левая рука</b> — <span class="sw o"></span>у C4 ${f(at(A.L.featR))} дБ, <span class="sw b"></span>у C3 ${f(at(A.L.featL))} дБ; `+
-  `<b>правая</b> — у C4 ${f(at(A.R.featR))} дБ, у C3 ${f(at(A.R.featL))} дБ. Затухает полушарие напротив руки. Подсказки модель не получает — она видит только это затухание.`}
+ $('avgT').innerHTML=`Мощность ритма 8–30 Гц за 2 с у ${D.subject}, все три записи, среднее по попыткам: насколько она изменилась по сравнению с секундой перед подсказкой. `+
+  `Через 2,5 с после подсказки: <b>руки</b> — <span class="sw o"></span>у C3/C4 ${f(at(A.H.ch))} дБ, <span class="sw b"></span>у Cz ${f(at(A.H.cz))} дБ; `+
+  `<b>ноги</b> — у C3/C4 ${f(at(A.F.ch))} дБ, у Cz ${f(at(A.F.cz))} дБ. На руки ритм над руками сильно затихает, на ноги — слегка усиливается: `+
+  `по этой разнице (и по всей картине 21 электрода) модель отличает «ноги» от «рук» и от покоя. Подсказок модель не получает.`}
 
-// ---------- плата neuro_mi по Bluetooth: телефон шлёт ТОЛЬКО сырые отсчёты, плата решает и ставит CH7 ----------
+// ---------- плата neuro_mi по Bluetooth: телефон шлёт ТОЛЬКО сырые отсчёты, плата калибруется, решает и ставит CH7 ----------
 const MI_SVC='9b3e0001-5a1d-4c6e-8f2a-6e6575726f6d',MI_RX='9b3e0002-5a1d-4c6e-8f2a-6e6575726f6d',MI_TX='9b3e0003-5a1d-4c6e-8f2a-6e6575726f6d';
 const sigm=v=>1/(1+Math.exp(-v));
 const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,out:[],outLen:0,busy:false,sent:0,base:0,lastN:0,
- bytes:0,t0:0,steps:[],tl:[],ch7:1500,xs:0,hello:null,inbuf:'',err:'',lastWrite:0,holdUntil:0,
+ bytes:0,t0:0,steps:[],tl:[],ch7:1500,xs:0,hello:null,inbuf:'',err:'',lastWrite:0,holdUntil:0,calDone:null,
  frame(type,payload){const n=payload?payload.length:0,f=new Uint8Array(5+n);f[0]=0xA5;f[1]=0x5A;f[2]=type.charCodeAt(0);f[3]=n;let c=f[2]^n;
   for(let i=0;i<n;i++){f[4+i]=payload[i];c^=payload[i]}f[4+n]=c;return f},
  push(f){this.out.push(f);this.outLen+=f.length},
@@ -910,8 +929,10 @@ const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,ou
   const subj=td.decode(new Uint8Array(buf,4,4)).trim(),nr=v.getUint8(8),nch=v.getUint8(9);let o=12;const runs=[];
   for(let k=0;k<nr;k++){const name=td.decode(new Uint8Array(buf,o,4)).trim(),n=v.getUint32(o+4,true),ne=v.getUint16(o+8,true);o+=10+5*ne;runs.push({name,n})}
   for(const r of runs){r.data=new Uint8Array(buf,o,r.n*nch*2);o+=r.n*nch*2}                  // метки в файле есть, на плату не идут
-  const run=runs.find(r=>r.name===D.run);if(!run)throw new Error('в файле нет записи '+D.run);
-  return this.S={subj,nch,run}},
+  const a=runs.find(r=>r.name===D.cal_run),b=runs.find(r=>r.name===D.run);
+  if(!a||!b||a.n!==D.n0)throw new Error('в файле нет записей '+D.cal_run+' и '+D.run);
+  const data=new Uint8Array((a.n+b.n)*nch*2);data.set(a.data,0);data.set(b.data,a.n*nch*2);     // покой, сразу за ним запись
+  return this.S={subj,nch,run:{n:a.n+b.n,data}}},
  async connect(){
   try{this.err='';this.status('Загружаю запись для платы…');await this.loadStream();
    this.status('Выбери в списке плату NeuroMI (браузер может показывать старое имя — NeuroPilot)…');
@@ -925,9 +946,9 @@ const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,ou
    this.on=true;this.ready=false;this.hello=null;this.gotN=false;this.mtu=23;this.xs=0;this.bytes=0;this.clear();play(false);t=0;
    $('bconn').style.display='none';$('bdisc').style.display='';$('bkv').style.display='';$('speed').value='1';$('speed').disabled=true;
    this.status('Подключено. Жду ответ платы…');
-   setTimeout(()=>{if(this.on&&!this.ready)this.status('Плата не ответила за 4 с — та ли прошивка (neuro_mi v2)? Отключи и подключи снова.')},4000);draw()}
+   setTimeout(()=>{if(this.on&&!this.ready)this.status('Плата не ответила за 4 с — та ли прошивка (neuro_mi v3)? Отключи и подключи снова.')},4000);draw()}
   catch(e){this.status((/cancel|chosen/i.test(e.message)?'Плата не выбрана.':'Не подключилось: '+e.message));this.on=false}},
- clear(){this.sent=0;this.base=0;this.lastN=0;this.steps=[];this.tl=[];this.ch7=1500;this.holdUntil=performance.now()+1300},   // плата сама начнёт поток с нуля после 1 с тишины
+ clear(){this.sent=0;this.base=0;this.lastN=0;this.steps=[];this.tl=[];this.ch7=1500;this.calDone=null;this.holdUntil=performance.now()+1300},   // плата сама начнёт поток с нуля (и калибровку) после 1 с тишины
  disconnect(){this.on=false;try{this.dev&&this.dev.gatt.connected&&this.dev.gatt.disconnect()}catch(e){}this.reset('Плата отключена. Через 1 с без данных она сама вернёт CH7 в 1500.')},
  lost(){if(!this.on)return;this.on=false;this.reset('Связь с платой потеряна. Плата сама вернёт CH7 в 1500 через 1 с. Подключи снова.')},
  reset(msg){ticker(false);this.ready=false;this.out=[];this.outLen=0;this.busy=false;this.ch7=1500;
@@ -939,18 +960,20 @@ const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,ou
   else if(p[0]==='N'){try{const j=JSON.parse(l.slice(2));this.mtu=j.mtu||23}catch(e){}
    this.chunk=Math.max(20,Math.min(240,this.mtu-3));this.gotN=true;if(this.hello)this.check();
    else setTimeout(()=>{if(this.on&&!this.hello)this.check()},1500)}            // H приходит вместе с N; нет H за 1,5 с — старая прошивка
-  else if(p[0]==='C'&&p.length>=5){const e=this.base+(+p[1]),s={e,pt:sigm(+p[2]),ph:sigm(+p[3]),cmd:+p[4]};this.lastN=+p[1];
+  else if(p[0]==='W'){this.lastN=+p[1]}                                          // идёт калибровка
+  else if(p[0]==='F'){this.lastN=+p[1];this.calDone=this.base+(+p[1])}            // калибровка закончена
+  else if(p[0]==='C'&&p.length>=4){const e=this.base+(+p[1]),s={e,pf:sigm(+p[2]),cmd:+p[3]};this.lastN=+p[1];
    this.steps.push(s);this.tl.push([e,s.cmd]);this.ch7=s.cmd;if(!playing)this.late()}
   else if(p[0]==='K'){this.ch7=+p[2]}
-  else if(p[0]==='R'){this.base=this.sent;this.lastN=0;this.ch7=1500}      // плата начала поток с нуля: её отсчёт 0 = следующий наш
+  else if(p[0]==='R'){this.base=this.sent;this.lastN=0;this.ch7=1500;this.calDone=null}      // плата начала поток с нуля: её отсчёт 0 = следующий наш
   else if(p[0]==='X'){this.xs++}},
  late(){clearTimeout(this.lt);this.lt=setTimeout(()=>{draw();this.ui()},150)},   // хвост решений после остановки потока
  check(){const h=this.hello||{};
-   if(!h.v||h.v<2){this.status('На плате старая прошивка neuro_mi (с подсказками). Залей neuro_mi v2.');return}
-   if(h.subject!==this.S.subj||h.test!==D.run){this.status(`В плате модель для ${h.subject}, проверка ${h.test}; а запись — ${this.S.subj} ${D.run}. Перепрошей плату или обнови страницу.`);return}
+   if(!h.v||h.v<3||h.mode!=='feet'){this.status('На плате старая прошивка neuro_mi (руки). Залей neuro_mi v3 («ноги»).');return}
+   if(h.subject!==this.S.subj||h.test!==D.run||h.cal!==D.cal_run){this.status(`В плате модель для ${h.subject} (${h.cal} + ${h.test}); а запись — ${this.S.subj} ${D.cal_run} + ${D.run}. Перепрошей плату или обнови страницу.`);return}
    this.ready=true;
-   this.status(`Плата <b>${h.subject}</b> на связи (MTU ${this.mtu}${this.mtu<=23?' — маленький пакет, поток может идти медленнее реального времени':''}). Модель обучена на ${h.train}. `+
-    `Нажми «Пуск»: на плату пойдут только сырые ЭЭГ записи ${D.run} в реальном времени; команду CH7 на пульт ставит плата.`)},
+   this.status(`Плата <b>${h.subject}</b> на связи (MTU ${this.mtu}${this.mtu<=23?' — маленький пакет, поток может идти медленнее реального времени':''}). Модель «ноги» обучена на ${h.train}. `+
+    `Нажми «Пуск»: на плату пойдут только сырые ЭЭГ в реальном времени — минута покоя ${D.cal_run} (первые ${D.cal_s} с плата калибруется), затем запись ${D.run}. Команду CH7 на пульт ставит плата.`)},
  pump(time){if(!this.on||!this.ready||!this.S||performance.now()<this.holdUntil)return;
   const S=this.S.run,target=Math.min(S.n,Math.floor(time*D.fs)),nb=this.S.nch*2;
   while(this.sent<target){const i=this.sent,j=Math.min(i+4,target);if(j-i<4&&target<S.n)break;      // блок по 4 отсчёта
@@ -969,8 +992,10 @@ const B={on:false,ready:false,dev:null,rx:null,S:null,mtu:23,chunk:20,nr:true,ou
  ui(){if(!this.on)return;const el=$('bkv');
   let same=0,cmp=0;for(const s of this.steps){const k=kOf(s.e);if(Number.isInteger(k)&&k>=0&&k<D.cmd.length){cmp++;if(D.cmd[k]===s.cmd)same++}}
   const el_s=Math.max(.001,(performance.now()-this.t0)/1000),lag=Math.max(0,(this.sent-(this.base+this.lastN))/D.fs),
-   rate=playing?(this.bytes-(this.bytes0||0))/el_s:0,rt=playing&&el_s>2?(this.sent-(this.sent0||0))/D.fs/el_s:null;
+   rate=playing?(this.bytes-(this.bytes0||0))/el_s:0,rt=playing&&el_s>2?(this.sent-(this.sent0||0))/D.fs/el_s:null,calN=D.cal_s*D.fs;
+  const cal=this.calDone!==null?(this.calDone===calN?'готова':'на отсчёте '+this.calDone):this.sent>0?'идёт':'—';
   el.innerHTML=`<div>отправлено<b>${fmt(this.sent/D.fs)}</b></div><div class="${lag>1.5?'bad':''}">отставание платы<b>${dec(lag)} с</b></div>`+
+   `<div class="${this.calDone!==null&&this.calDone!==calN?'bad':this.calDone===calN?'good':''}">калибровка платы<b>${cal}</b></div>`+
    `<div>поток<b>${playing?dec(rate/1000)+' КБ/с':'—'}</b></div>`+
    `<div class="${rt!==null&&rt<0.95?'bad':''}">скорость к реальному времени<b>${rt===null?'—':'×'+dec(rt,2)}</b></div>`+
    `<div class="${!cmp?'':same<cmp?'bad':'good'}">шагов плата = расчёт<b>${same} из ${cmp}</b></div><div class="${this.xs?'bad':''}">ошибки приёма<b>${this.xs}</b></div>`+
@@ -991,7 +1016,9 @@ function tick(){if(!B.on||!playing)return;const now=performance.now(),dt=Math.mi
 function ticker(on){if(on&&!tickW){try{tickW=new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),20)'],{type:'text/javascript'})));
   tickW.onmessage=tick}catch(e){tickW=setInterval(tick,20)}tickLast=performance.now()}
  else if(!on&&tickW){if(tickW.terminate)tickW.terminate();else clearInterval(tickW);tickW=null}}
-function play(on){if(on&&t>=D.dur)restart();playing=on&&!!D;$('play').textContent=playing?'⏸ Пауза':'▶ Пуск';
+function play(on){if(on&&t>=D.dur)restart();
+ if(on&&B.on&&t>0&&!playing&&performance.now()-B.lastWrite>900){restart()}          // пауза дольше 1 с — плата сбросилась: заново, с калибровки
+ playing=on&&!!D;$('play').textContent=playing?'⏸ Пауза':'▶ Пуск';
  if(playing&&!raf){last=performance.now();raf=requestAnimationFrame(loop)}
  ticker(playing&&B.on);if(playing&&B.on){B.t0=performance.now();B.bytes0=B.bytes;B.sent0=B.sent}}
 function restart(){t=0;if(B.on)B.clear();draw()}
