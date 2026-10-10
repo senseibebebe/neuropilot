@@ -251,7 +251,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
 <!-- ===================== ЭЭГ демо: чужая открытая запись → (плата neuro_mi) → команда, без подсказок ===================== -->
 <section id="demo" class="off">
 <div class="card warnbox">
-  <b>Это не наша гарнитура.</b> Чужая открытая запись: <b id="d-title">—</b>. Модель берёт 21 электрод над макушкой
+  <b>Это не наша гарнитура.</b> Чужая открытая запись: <b id="d-title">—</b>. Модель берёт <span id="d-nch">21 электрод</span> над макушкой
   и моторной корой. Человек по подсказке <b>представлял</b> движение <b>ног</b> или <b>руки</b>, не двигаясь, а между
   попытками ничего не делал. <b>Ноги → команда ВПЕРЁД</b> (толчок CH7 на 1 с, как жест в ЭМГ), руки и покой → ничего:
   в полёте руки на стиках, глаза на дроне, а ноги свободны. <b>Модель получает только сырые ЭЭГ</b> — ни подсказок,
@@ -270,7 +270,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
     <button class="primary" id="d-play" disabled>▶ Пуск</button>
     <button id="d-next" disabled>С начала</button>
     <select id="d-speed" aria-label="Скорость"><option value="1">Скорость 1×</option><option value="2" selected>Скорость 2×</option><option value="4">Скорость 4×</option><option value="8">Скорость 8×</option></select>
-    <select id="d-model" aria-label="Запись"><option value="S042">S042 · 3 мин</option><option value="BCI4F">BCI IV f · 40 мин</option></select>
+    <select id="d-model" aria-label="Запись"><option value="S042">S042 · 3 мин</option><option value="BCI4F">BCI IV f · 40 мин</option><option value="WB002">WBCIC sub-002 · 49 мин</option><option value="BN03">BNCI S03 · 11 мин</option></select>
   </div>
   <div class="muted" id="d-load" style="margin-top:8px">Загружаю запись…</div>
   <div id="d-board">
@@ -305,9 +305,11 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
   </table></div>
   <div class="muted" id="d-note" style="margin-top:8px"></div>
   <div class="src" style="margin-top:10px">Данные: PhysioNet, EEG Motor Movement/Imagery Dataset (ODC-By 1.0; Schalk G. et al., IEEE TBME 51(6):1034–1043, 2004;
-    Goldberger A. et al., Circulation 101(23):e215–e220, 2000; <a href="https://physionet.org/content/eegmmidb/1.0.0/" target="_blank" rel="noopener">physionet.org/content/eegmmidb</a>)
-    и BCI Competition IV, набор 1 (Blankertz B. et al., Berlin BCI; <a href="https://bbci.de/competition/iv/" target="_blank" rel="noopener">bbci.de/competition/iv</a>).
-    Расчёт: rc-neuro/tools/neuro_mi (models.py, mi_feet.py, bci4_feet.py) в репозитории проекта.</div>
+    Goldberger A. et al., Circulation 101(23):e215–e220, 2000; <a href="https://physionet.org/content/eegmmidb/1.0.0/" target="_blank" rel="noopener">physionet.org/content/eegmmidb</a>),
+    BCI Competition IV, набор 1 (Blankertz B. et al., Berlin BCI; <a href="https://bbci.de/competition/iv/" target="_blank" rel="noopener">bbci.de/competition/iv</a>),
+    WBCIC_SHU Motor Imagery dataset, набор 3C (Yang B. et al., Shanghai University; ODC-BY / CC BY 4.0; doi 10.25452/figshare.plus.22671172)
+    и BNCI 2014-002 (Steyrl D., Scherer R., Förstner O., Müller-Putz G. R., TU Graz; CC BY-ND 4.0; <a href="https://bnci-horizon-2020.eu/database/data-sets" target="_blank" rel="noopener">bnci-horizon-2020.eu</a>).
+    Расчёт: rc-neuro/tools/neuro_mi (models.py, mi_feet.py, bci4_feet.py, wbcic_feet.py, bnci2014002_feet.py) в репозитории проекта.</div>
 </div>
 </section>
 </main>
@@ -336,7 +338,7 @@ async function attempt(){
  if(BLE.linked||BLE.busy||!BLE.dev||BLE.manualOff)return;BLE.busy=true;clearTimeout(BLE.retryT);const tok=BLE.tok=(BLE.tok||0)+1;
  try{await withTimeout(gattUp(tok),15000,'подключение');BLE.retry=0}
  catch(e){if(tok===BLE.tok){try{BLE.dev.gatt.disconnect()}catch(_){}BLE.retry=(BLE.retry||0)+1;const d=Math.min(15000,1500*2**Math.min(BLE.retry,4));
-  connUi(`Не подключилось (${e.message}). Пробую снова через ${Math.round(d/1000)} с — попытка ${BLE.retry + 1}. Плата может быть занята гарнитурой; если долго не выходит — выключи и включи плату.`,true);
+  connUi(/No Services matching/i.test(e.message)?`Связь есть, но у этой платы нет служб NeuroPilot: в ней другая прошивка (например, neuro_mi) или браузер помнит службы прежней прошивки. Залей neuro_combo v1.8 (или neuro_pilot), нажми «Выбрать плату из списка» и выбери плату заново. Пробую снова через ${Math.round(d/1000)} с.`:`Не подключилось (${e.message}). Пробую снова через ${Math.round(d/1000)} с — попытка ${BLE.retry + 1}. Плата может быть занята гарнитурой; если долго не выходит — выключи и включи плату.`,true);
   BLE.retryT=setTimeout(attempt,d)}}
  finally{BLE.busy=false}}
 function onTx(e){bleOnData(e.target.value)}
@@ -786,7 +788,7 @@ function use(d){D=d;model=d.model;$('model').value=model;$('load').style.display
   for(const p of D.pulses)for(let k=p;k<Math.min(ns,p+w);k++)D.cmd[k]=2000;D.tl=D.cmd.map((c,k)=>[eOf(k),c])}
  trials=D.cues.filter(c=>c.lab==='F'||c.lab==='H').map(c=>({a:Math.round(c.t*D.fs),b:Math.round((c.t+c.d)*D.fs),lab:c.lab}));tStart=trials.map(x=>x.a);
  const pw=D.pz.concat(D.ph).filter(v=>v!==null),[a,b]=rng(pw,.005,.995);D.wmin=Math.floor(a-1);D.wmax=Math.ceil(b+1);
- $('title').textContent=D.title;
+ $('title').textContent=D.title;{const n=D.nch||21,m=n%10,h=n%100;$('nch').textContent=n+' электрод'+(m===1&&h!==11?'':m>=2&&m<=4&&(h<12||h>14)?'а':'ов')}
  $('play').disabled=false;$('next').disabled=false;$('bconn').disabled=!navigator.bluetooth;
  if(!navigator.bluetooth&&!/не умеет/.test($('bst').innerHTML))$('bst').innerHTML+=' <b>Этот браузер не умеет Bluetooth</b> — нужен Chrome на Android (или на компьютере).';
  howto();summary();t=0;if(B.on){B.clear();if(B.hello)B.check()}draw();drawAvg()}
@@ -802,27 +804,26 @@ function score(tl,upTo){const A=D.after*D.fs,hit=new Set();let fpIdle=0,fpGap=0,
   prev=c}
  let nf=0;trials.forEach((x,j)=>{if(x.lab==='F'&&(x.b+A<=upTo||hit.has(j)))nf++});
  return{hit:hit.size,nf,fpIdle,fpGap,fpHand,lat:hit.size?lat/hit.size:0}}
-function howto(){const kS=dec(D.k*D.step/D.fs,2);
- $('howto').innerHTML=`<b>Что на графике.</b> Сверху — сигнал трёх электродов после фильтра 8–30 Гц (общий масштаб): Cz на макушке (там «ноги»),
-  C3 и C4 над моторной корой рук. Ниже — мощность ритма 8–30 Гц за последние 2 с, в децибелах к фону:
+function howto(){const kS=dec(D.k*D.step/D.fs,2),band=D.band?D.band.join('–'):'8–30';
+ $('howto').innerHTML=`<b>Что на графике.</b> Сверху — сигнал трёх электродов после фильтра ${band} Гц (общий масштаб): Cz на макушке (там «ноги»),
+  C3 и C4 над моторной корой рук. Ниже — мощность ритма ${band} Гц за последние 2 с, в децибелах к фону:
   <span class="sw b"></span><b>у Cz</b> и <span class="sw o"></span><b>у C3/C4</b>. Ещё ниже — <b>вероятность «ноги»</b>
   (пунктир — порог ${dec(D.p)}) и <b>команда</b> во времени. Фоном: серым — ${D.cal_s?'калибровка и ':''}покой, синим — попытки «ноги», оранжевым — «руки».<br>
-  <b>Как решает модель.</b> Каждые ${dec(D.step/D.fs,3).replace(/0+$/,'')} с — ковариация 21 электрода за 2 с, приведённая к фону этого человека
-  (${D.cal_s?`фон плата считает сама по первым ${D.cal_s} с потока — человек в это время в покое`:'фон посчитан по калибровочной части той же сессии и зашит в прошивку'}),
-  и линейный классификатор. Обучен на ${D.model==='S042'?'записях R06 и R10':'калибровочной части (200 попыток по подсказке на экране)'} этого человека; эту запись не видел.<br>
+  <b>Как решает модель.</b> Каждые ${dec(D.step/D.fs,3).replace(/0+$/,'')} с — ковариация сигналов всех электродов (${D.nch||21} шт.) за 2 с, приведённая к фону этого человека
+  (${D.cal_s?`фон плата считает сама по первым ${D.cal_s} с потока — человек в это время в покое`:'фон посчитан заранее по обучающей части той же сессии и зашит в прошивку'}),
+  и линейный классификатор. Обучен на ${D.train_txt} этого человека; эту запись не видел.<br>
   <b>Когда команда.</b> Вероятность «ноги» выше порога ${D.k} шагов подряд (${kS} с) → <b>толчок ВПЕРЁД: CH7 2000 на 1 с</b>, затем 1500 — как жест в ЭМГ.
   Следующий толчок — только когда «ноги» пропадут и появятся снова.`}
 function summary(){const R=D.ref,S=D.summary,fpm=(R.fp_idle+R.fp_gap+R.fp_hand)/Math.max(1e-9,R.idle_min+R.gap_min+R.hand_min);
  $('this').innerHTML=`<b>${D.title}</b>, запись, которую модель не видела (${fmt(D.dur)}): поймано <b>${R.hit} из ${R.n_feet}</b> попыток «ноги», `+
   `ложных включений — ${R.fp_idle} в покое, ${R.fp_gap} в паузах, ${R.fp_hand} во время попыток «руки» (${dec(fpm)} в минуту). Задержка от подсказки — ${dec(R.lat)} с.`+
-  (D.model==='S042'?` S042 выбран не по итогу, а проверкой калибровки, как в ЭМГ: модель учится на одной записи и проверяется на другой.`:
-   ` Человек f — один из двух живых людей с «ногами» в этой базе; другие люди, другая аппаратура, отрезки «ничего не делаю» до 45 с — ближе всего к настоящему управлению.`);
+  (D.about||'');
  $('loroW').style.display=D.loro?'':'none';
  if(D.loro)$('loro').innerHTML=Object.entries(D.loro).map(([r,v])=>`<tr><td>${r}${r==='R14'?' (в плате)':''}</td><td class="n"><b>${v.hit}</b> из ${v.n}</td><td class="n">${v.fp_gap}</td><td class="n">${v.fp_hand}</td><td class="n">${v.fp_idle}</td></tr>`).join('');
  $('tab').innerHTML=S.map(r=>`<tr><td>${r.what}</td><td>${r.who}</td><td>${r.res}</td><td class="n"><b>${r.works}</b></td></tr>`).join('');
  $('note').innerHTML=`* «Работает» — поймано не меньше 70 % попыток «ноги» при не больше 1 ложного включения в минуту. `+
   `Итог: без подсказок «ноги» надёжно работают у единиц и примерно наполовину — у части людей; без калибровки на самом человеке не работают ни у кого. `+
-  `Люди обеих баз ни разу не тренировались с обратной связью. Оговорки: «руки» здесь — воображение, а не настоящее движение пальцев на стиках; дроном в базах никто не управлял.`}
+  `Ни в одной из баз люди не тренировались с обратной связью дольше одной сессии. Оговорки: «руки» здесь — воображение, а не настоящее движение пальцев на стиках; дроном в базах никто не управлял.`}
 function cueAt(time){for(const c of D.cues)if(time>=c.t&&time<c.t+c.d)return c;return null}
 const CUE={cal:'Калибровка: покой',idle:'Покой',rest:'Отдых',F:'Представь: НОГИ',H:'Представь: РУКУ'};
 function ui(){const cue=cueAt(t),cl=cue?cue.lab:'',upTo=Math.floor(t*D.fs),calN=D.cal_s*D.fs;
@@ -903,9 +904,9 @@ function drawAvg(){if(!D||!D.avg)return;const cv=$('avg'),dpr=window.devicePixel
   g.fillText('подсказка',X(0),top+PH+27);g.textAlign='left';
   if(!narrow||p===1){g.textAlign='right';g.fillText('с',x0+PW,top+PH+27);g.textAlign='left'}});
  const at=a=>a[Math.max(0,Math.min(a.length-1,Math.round((2.5-A.t0)/step)-1))],f=v=>dec(v).replace('-','−');
- $('avgT').innerHTML=`Мощность ритма 8–30 Гц за 2 с, ${D.model==='S042'?'все три записи S042':'калибровочная часть человека f'}, среднее по попыткам: насколько она изменилась по сравнению с секундой перед подсказкой. `+
+ $('avgT').innerHTML=`Мощность ритма ${D.band?D.band.join('–'):'8–30'} Гц за 2 с, ${D.avg_txt}, среднее по попыткам: насколько она изменилась по сравнению с секундой перед подсказкой. `+
   `Через 2,5 с после подсказки: <b>рука</b> — <span class="sw o"></span>у C3/C4 ${f(at(A.H.ch))} дБ, <span class="sw b"></span>у Cz ${f(at(A.H.cz))} дБ; `+
-  `<b>ноги</b> — у C3/C4 ${f(at(A.F.ch))} дБ, у Cz ${f(at(A.F.cz))} дБ. Модель учитывает всю картину по 21 электроду, а не одну линию; подсказок она не получает.`}
+  `<b>ноги</b> — у C3/C4 ${f(at(A.F.ch))} дБ, у Cz ${f(at(A.F.cz))} дБ. Модель учитывает всю картину по всем электродам (${D.nch||21} шт.), а не одну линию; подсказок она не получает.`}
 
 // ---------- плата neuro_mi по Bluetooth: телефон шлёт ТОЛЬКО сырые отсчёты, плата решает и даёт толчок CH7 ----------
 const MI_SVC='9b3e0001-5a1d-4c6e-8f2a-6e6575726f6d',MI_RX='9b3e0002-5a1d-4c6e-8f2a-6e6575726f6d',MI_TX='9b3e0003-5a1d-4c6e-8f2a-6e6575726f6d';
@@ -916,7 +917,7 @@ const B={on:false,ready:false,dev:null,rx:null,S:{},mtu:23,chunk:20,nr:true,out:
   for(let i=0;i<n;i++){f[4+i]=payload[i];c^=payload[i]}f[4+n]=c;return f},
  push(f){this.out.push(f);this.outLen+=f.length},
  backlog(){return this.outLen/(D.fs*44)},                         // секунд записи ещё не ушло в эфир
- async loadStream(){const m=D.model;if(this.S[m])return this.S[m];this.status('Загружаю запись для платы ('+(m==='S042'?'1,2':'10')+' МБ)…');
+ async loadStream(){const m=D.model;if(this.S[m])return this.S[m];this.status('Загружаю запись для платы ('+String(D.stream_mb||'').replace('.',',')+' МБ)…');
   const r=await fetch(DIR+'eeg_stream_'+m+'.bin');if(!r.ok)throw new Error('HTTP '+r.status);
   const buf=await r.arrayBuffer(),v=new DataView(buf),td=new TextDecoder();
   if(td.decode(new Uint8Array(buf,0,4))!=='MIS1')throw new Error('не тот файл записи');
