@@ -270,7 +270,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
     <button class="primary" id="d-play" disabled>▶ Пуск</button>
     <button id="d-next" disabled>С начала</button>
     <select id="d-speed" aria-label="Скорость"><option value="1">Скорость 1×</option><option value="2" selected>Скорость 2×</option><option value="4">Скорость 4×</option><option value="8">Скорость 8×</option></select>
-    <select id="d-model" aria-label="Запись"><option value="S042">S042 · 3 мин</option><option value="BCI4F">BCI IV f · 40 мин</option><option value="WB002">WBCIC sub-002 · 49 мин</option><option value="BN03">BNCI S03 · 11 мин</option></select>
+    <select id="d-model" aria-label="Запись"><option value="S042" data-m="S042">S042 · 3 мин</option><option value="BCI4F_6" data-m="BCI4F">BCI IV f · 6 мин</option><option value="WB002_9" data-m="WB002">WBCIC sub-002 · 10 мин</option><option value="BN03" data-m="BN03">BNCI S03 · 11 мин</option><option value="BCI4F" data-m="BCI4F">BCI IV f · 40 мин (вся)</option><option value="WB002" data-m="WB002">WBCIC sub-002 · 49 мин (весь день)</option></select>
   </div>
   <div class="muted" id="d-load" style="margin-top:8px">Загружаю запись…</div>
   <div id="d-board">
@@ -782,7 +782,7 @@ async function load(m){if(loading)return;m=m||model;
  try{const r=await fetch(DIR+'eeg_demo_'+m+'.json');if(!r.ok)throw new Error('HTTP '+r.status);cache[m]=await r.json()}
  catch(e){$('load').textContent='Не загрузилась запись ('+e.message+'). Нужен доступ к сайту хотя бы один раз; при открытии файла с диска браузер её не отдаёт.';loading=false;return}
  loading=false;use(cache[m])}
-function use(d){D=d;model=d.model;$('model').value=model;$('load').style.display='none';tr={};
+function use(d){D=d;model=d.rec||d.model;$('model').value=model;$('load').style.display='none';tr={};
  for(const c in D.traces)tr[c]={a:b64i8(D.traces[c].b64),sc:D.traces[c].scale_uV};
  if(!D.cmd){const ns=D.pf.length,w=Math.round(D.fs/D.step);D.cmd=new Array(ns).fill(1500);    // толчки по 1 с от начала
   for(const p of D.pulses)for(let k=p;k<Math.min(ns,p+w);k++)D.cmd[k]=2000;D.tl=D.cmd.map((c,k)=>[eOf(k),c])}
@@ -834,7 +834,7 @@ function ui(){const cue=cueAt(t),cl=cue?cue.lab:'',upTo=Math.floor(t*D.fs),calN=
  $('cmd').className=v===2000?'c2000':'';
  $('cmdT').textContent=v===2000?'ВПЕРЁД · CH7 2000':'CH7 1500';
  $('cmdV').textContent=calN&&upTo<=calN?'калибровка по фону — решений ещё нет':v===2000?(cl==='F'?'✓ толчок, подсказка — ноги':cl==='H'?'✗ толчок, подсказка — рука':'⚠ толчок в покое'):(cl==='F'?'ждёт уверенности':'покой');
- $('pos').innerHTML=`${D.model} · ${fmt(t)} / ${fmt(D.dur)}`;
+ $('pos').innerHTML=`${D.rec||D.model} · ${fmt(t)} / ${fmt(D.dur)}`;
  const S=score(B.on?B.tl:D.tl,upTo);
  $('score').innerHTML=(B.on?'плата: ':'')+(!calN||upTo>calN?`ноги <b>${S.hit} из ${S.nf}</b> · ложных: покой ${S.fpIdle}, паузы ${S.fpGap}, «руки» ${S.fpHand}`:'калибровка…')}
 function series(g,vals,t0,tEnd,X,Y){g.beginPath();let first=true;const k0=Math.max(0,Math.floor((t0*D.fs-D.nwin)/D.step)),k1=Math.min(vals.length-1,Math.ceil((tEnd*D.fs-D.nwin)/D.step));
@@ -917,14 +917,14 @@ const B={on:false,ready:false,dev:null,rx:null,S:{},mtu:23,chunk:20,nr:true,out:
   for(let i=0;i<n;i++){f[4+i]=payload[i];c^=payload[i]}f[4+n]=c;return f},
  push(f){this.out.push(f);this.outLen+=f.length},
  backlog(){return this.outLen/(D.fs*44)},                         // секунд записи ещё не ушло в эфир
- async loadStream(){const m=D.model;if(this.S[m])return this.S[m];this.status('Загружаю запись для платы ('+String(D.stream_mb||'').replace('.',',')+' МБ)…');
+ async loadStream(){const m=D.rec||D.model;if(this.S[m])return this.S[m];this.status('Загружаю запись для платы ('+String(D.stream_mb||'').replace('.',',')+' МБ)…');
   const r=await fetch(DIR+'eeg_stream_'+m+'.bin');if(!r.ok)throw new Error('HTTP '+r.status);
   const buf=await r.arrayBuffer(),v=new DataView(buf),td=new TextDecoder();
   if(td.decode(new Uint8Array(buf,0,4))!=='MIS1')throw new Error('не тот файл записи');
   const nch=v.getUint8(9),n=v.getUint32(16,true),ne=v.getUint16(20,true),o=22+5*ne;
   if(n!==D.n)throw new Error('файл записи не совпадает с данными страницы — обнови страницу');
   return this.S[m]={nch,run:{n,data:new Uint8Array(buf,o,n*nch*2)}}},
- cur(){return this.S[D.model]},
+ cur(){return this.S[D.rec||D.model]},
  async connect(){
   try{this.err='';await this.loadStream();
    this.status('Выбери в списке плату NeuroMI (браузер может показывать старое имя — NeuroPilot)…');
@@ -961,9 +961,10 @@ const B={on:false,ready:false,dev:null,rx:null,S:{},mtu:23,chunk:20,nr:true,out:
   else if(p[0]==='X'){this.xs++}},
  late(){clearTimeout(this.lt);this.lt=setTimeout(()=>{draw();this.ui()},150)},   // хвост решений после остановки потока
  check(){const h=this.hello||{};this.ready=false;
-   if(!h.v||h.v<3||h.mode!=='feet'||!h.pulse){this.status('На плате старая прошивка neuro_mi. Залей neuro_mi v3.1.');return}
+   if(!h.v||h.v<3||h.mode!=='feet'||!h.pulse){this.status('На плате старая прошивка neuro_mi. Залей neuro_mi v3.3.');return}
    if(h.model!==D.model){                                                       // запись на странице — та, что зашита в плату
-    if([...$('model').options].some(o=>o.value===h.model)){this.status(`В плате модель <b>${h.model}</b> — переключаю запись на неё…`);play(false);load(h.model);return}
+    const o=[...$('model').options].find(o=>o.dataset.m===h.model);                // первая подходящая — короткая запись
+    if(o){this.status(`В плате модель <b>${h.model}</b> — переключаю запись на неё…`);play(false);load(o.value);return}
     this.status(`В плате модель <b>${h.model}</b>, такой записи на странице нет. Обнови страницу или перепрошей плату.`);return}
    if(!this.cur()){this.loadStream().then(()=>{if(this.on&&this.hello===h)this.check()}).catch(e=>this.status('Не загрузилась запись для платы: '+e.message));return}   // поток этой записи ещё не скачан
    this.ready=true;
