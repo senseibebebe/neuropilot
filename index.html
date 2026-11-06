@@ -155,6 +155,15 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
 </div>
 
 <div class="card" data-tabs="ectl">
+  <b>Флип в Liftoff</b>
+  <p>Газ держи стиком. На Pocket включи модель Liftoff Flip и переключатель разрешения.</p>
+  <div id="e-flip-state">Подключи плату. Для флипа нужна прошивка neuro_flip.</div>
+  <label>Длительность переворота, мс</label><input id="e-flip-ms" type="number" min="150" max="1500" value="600" step="10" disabled>
+  <div class="row"><button id="e-flip-save" disabled>Сохранить длительность</button><button id="e-flip-on" disabled>Включить флипы жестом</button><button class="danger" id="e-flip-off" disabled>Выключить флипы</button></div>
+  <p>Тест работает без гарнитуры. Сначала подними дрон в симуляторе и включи режим флипа.</p>
+  <div class="row"><button id="e-flip-fwd" disabled>Тест вперёд</button><button id="e-flip-back" disabled>Тест назад</button></div>
+</div>
+<div class="card" data-tabs="ectl">
   <div style="font-weight:600;margin-bottom:8px">Настройки</div>
   <div class="grid2">
     <div><label>Толчок вперёд/назад, мс</label><input id="e-pulse" type="number" min="200" max="5000" step="100"></div>
@@ -270,7 +279,7 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
     <button class="primary" id="d-play" disabled>▶ Пуск</button>
     <button id="d-next" disabled>С начала</button>
     <select id="d-speed" aria-label="Скорость"><option value="1">Скорость 1×</option><option value="2" selected>Скорость 2×</option><option value="4">Скорость 4×</option><option value="8">Скорость 8×</option></select>
-    <select id="d-model" aria-label="Запись"><option value="S042" data-m="S042">S042 · 3 мин</option><option value="BCI4F_6" data-m="BCI4F">BCI IV f · 6 мин</option><option value="WB002_9" data-m="WB002">WBCIC sub-002 · 10 мин</option><option value="BN03" data-m="BN03">BNCI S03 · 11 мин</option><option value="BCI4F" data-m="BCI4F">BCI IV f · 40 мин (вся)</option><option value="WB002" data-m="WB002">WBCIC sub-002 · 49 мин (весь день)</option></select>
+    <select id="d-model" aria-label="Запись"><option value="S042" data-m="S042">S042 · 3 мин</option><option value="WB002_9" data-m="WB002">WBCIC sub-002 · 10 мин</option><option value="BN03" data-m="BN03">BNCI S03 · 11 мин</option><option value="WB002" data-m="WB002">WBCIC sub-002 · 49 мин (весь день)</option></select>
   </div>
   <div class="muted" id="d-load" style="margin-top:8px">Загружаю запись…</div>
   <div id="d-board">
@@ -347,10 +356,10 @@ async function gattUp(tok){connUi(BLE.retry?'Переподключаюсь…':
  tx.removeEventListener('characteristicvaluechanged',onTx);tx.addEventListener('characteristicvaluechanged',onTx);await tx.startNotifications();   // один обработчик, без удвоения строк
  if(tok!==BLE.tok)throw new Error('устаревшая попытка');
  BLE.chRx=rx;BLE.lastRx=Date.now();
- BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.modeMsg='';BLE.pend=[];BLE.autoTab=true;BLE.linked=true;g$('fw').textContent='';connUi('',false);tabsUi();
+ BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.modeMsg='';BLE.pend=[];BLE.autoTab=true;BLE.linked=true;EMG.onDisc();g$('fw').textContent='';connUi('',false);tabsUi();
  setTimeout(()=>{if(BLE.linked&&!BLE.modes)cmd('P')},2500);   // приветствие H могло прийти раньше подписки и потеряться — версия будет в ответе на P
  setTimeout(()=>{if(BLE.linked&&!BLE.kind){const p=BLE.pend.splice(0);p.forEach(l=>{EMG.onLine(l);EEG.onLine(l)})}},6000)}
-function bleOnDisc(){BLE.linked=false;BLE.chRx=null;EEG.onDisc();g$('chips').innerHTML=chip0(BLE.manualOff?'Плата: отключена':'Плата: нет связи',BLE.manualOff?'':'bad');tabsUi();
+function bleOnDisc(){BLE.linked=false;BLE.chRx=null;EEG.onDisc();EMG.onDisc();g$('chips').innerHTML=chip0(BLE.manualOff?'Плата: отключена':'Плата: нет связи',BLE.manualOff?'':'bad');tabsUi();
  if(BLE.manualOff){connUi('Отключено. «Переподключиться» — к той же плате, без выбора из списка.',true);return}
  connUi(BLE.switching?'Плата переключает режим — переподключаюсь…':'Связь с платой потеряна — переподключаюсь сама. Можно нажать «Переподключиться».',true);
  clearTimeout(BLE.retryT);BLE.retryT=setTimeout(attempt,1500)}
@@ -447,6 +456,24 @@ function cueSync(s){
  else if(s.cue_in>=0){const at=now+s.cue_in;
   if(!cueT||Math.abs(at-cueAt)>200){clearTimeout(cueT);cueAt=at;cueT=setTimeout(()=>{cueT=null;cueAt=0;cueFire(performance.now()+s.win)},s.cue_in)}}
  cueDraw();return true}
+let flipSupported=false;
+function flipUi(s){
+ const supported=!!s&&typeof s.flip_enabled==='boolean'&&BLE.linked;
+ flipSupported=supported;
+ $('flip-state').textContent=supported?(s.flip_running?'Выполняется флип':s.flip_enabled?'Флипы включены':'Флипы выключены'):
+   BLE.linked?'На этой прошивке флипы недоступны. Остальные функции работают как обычно.':'Подключи плату. Для флипа нужна прошивка neuro_flip.';
+ const busy=!!s&&/^cal_/.test(s.mode), running=!!s&&!!s.flip_running;
+ for(const id of ['flip-save','flip-on','flip-off','flip-fwd','flip-back','flip-ms'])$(id).disabled=!supported;
+ for(const id of ['flip-save','flip-on','flip-fwd','flip-back','flip-ms'])$(id).disabled=!supported||busy||running;
+ for(const id of ['flip-fwd','flip-back'])$(id).disabled=!supported||busy||running||!s.flip_enabled||!s.armed;
+ if(supported&&document.activeElement!==$('flip-ms'))$('flip-ms').value=s.flip_ms;
+}
+function flipCmd(c){if(flipSupported&&BLE.linked&&BLE.kind==='np')return cmd(c)}
+$('flip-save').onclick=()=>{const n=Number($('flip-ms').value);if(Number.isInteger(n)&&n>=150&&n<=1500)flipCmd('FLIP MS '+n)};
+$('flip-on').onclick=()=>flipCmd('FLIP ON');
+$('flip-off').onclick=()=>flipCmd('FLIP OFF');
+$('flip-fwd').onclick=()=>flipCmd('FLIP TEST FWD');
+$('flip-back').onclick=()=>flipCmd('FLIP TEST BACK');
 $('barm').onclick=()=>cmd(armed?'DISARM':'ARM');
 $('bforget').onclick=()=>{if(confirm('Стереть сохранённый профиль пилота?'))cmd('FORGET')};
 $('bwifi').onclick=()=>bleDisconnect();
@@ -455,6 +482,7 @@ document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>cmd('T'+b.dataset
 const NAME={0:'Брови',1:'Челюсть',2:'Зажмуривание'},EN={0:'BROWS',1:'JAW',2:'SQUEEZE'};
 function chip(txt,cls){return `<span class="chip ${cls}"><span class="dot"></span>${txt}</span>`}
 function render(s){
+ flipUi(s);
  st=s;armed=s.armed;$('barm').textContent=armed?'Запретить команды':'Разрешить команды';
  $('chips').innerHTML=chip('Плата: на связи','ok')+chip(s.link?'Гарнитура: данные идут':'Гарнитура: нет данных',s.link?'ok':'bad')+
   chip(s.poor>=200?'Контакт: нет':s.poor>0?'Контакт: '+s.poor:'Контакт: OK',s.poor>=200?'bad':s.poor>0?'warn':'ok')+
@@ -482,7 +510,7 @@ function render(s){
    `<td>${cur?'<span class="tag g">выбрана</span>':p.valid?`<button onclick="cmd('PAIR ${EN[p.a]} ${EN[p.b]}')">Выбрать</button>`:''}${p.valid&&!p.ok?' <span class="tag r">слабая</span>':''}</td></tr>`}).join('')}
  else $('pairsCard').style.display='none';
 }
-return {onLine,gesture:()=>{if(!audio)$('bsound').click()}};
+return {onLine,onDisc:()=>flipUi(null),gesture:()=>{if(!audio)$('bsound').click()}};
 })();
 </script>
 <script>
