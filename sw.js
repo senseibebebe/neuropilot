@@ -1,5 +1,5 @@
 // NeuroPilot: страница работает без интернета (в поле). При новой версии поменяй VER.
-const VER = 'np-v10.1';
+const VER = 'np-v10.2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './eeg_demo_S042.json', './eeg_demo_WB002.json', './eeg_demo_WB002_9.json', './eeg_demo_BN03.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VER).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
