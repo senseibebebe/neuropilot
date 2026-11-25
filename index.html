@@ -111,12 +111,6 @@ body.trkmode #t-phase,body.trkmode #t-mcap,body.trkmode #t-meter,body.trkmode #t
 </style></head><body><main>
 <h1><span>NeuroPilot <small id="fw"></small></span><button id="bpick" class="pick">Выбрать плату</button></h1>
 <div class="chips" id="chips"></div>
-<div class="card" id="battery-card" data-tabs="ecal ectl ttrain tcal" aria-live="polite">
-  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><b>Батарея BrainLink</b><strong id="battery-percent">—</strong></div>
-  <progress id="battery-meter" max="100" value="0" style="width:100%;margin-top:8px" aria-label="Заряд батареи BrainLink" hidden></progress>
-  <div class="muted" id="battery-note">Подключи плату, чтобы увидеть заряд гарнитуры.</div>
-</div>
-
 <div class="card" id="conncard">
   <h2>Связь с платой</h2>
   <div class="muted" id="conntxt"></div>
@@ -362,10 +356,10 @@ async function gattUp(tok){connUi(BLE.retry?'Переподключаюсь…':
  tx.removeEventListener('characteristicvaluechanged',onTx);tx.addEventListener('characteristicvaluechanged',onTx);await tx.startNotifications();   // один обработчик, без удвоения строк
  if(tok!==BLE.tok)throw new Error('устаревшая попытка');
  BLE.chRx=rx;BLE.lastRx=Date.now();
- BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.modeMsg='';BLE.pend=[];BLE.autoTab=true;BLE.linked=true;HEADSET_BATTERY.reset();EMG.onDisc();g$('fw').textContent='';connUi('',false);tabsUi();
+ BLE.inbuf='';BLE.kind=null;BLE.modes=false;BLE.switching=false;BLE.modeMsg='';BLE.pend=[];BLE.autoTab=true;BLE.linked=true;EMG.onDisc();g$('fw').textContent='';connUi('',false);tabsUi();
  setTimeout(()=>{if(BLE.linked&&!BLE.modes)cmd('P')},2500);   // приветствие H могло прийти раньше подписки и потеряться — версия будет в ответе на P
  setTimeout(()=>{if(BLE.linked&&!BLE.kind){const p=BLE.pend.splice(0);p.forEach(l=>{EMG.onLine(l);EEG.onLine(l)})}},6000)}
-function bleOnDisc(){BLE.linked=false;HEADSET_BATTERY.reset();BLE.chRx=null;EEG.onDisc();EMG.onDisc();g$('chips').innerHTML=chip0(BLE.manualOff?'Плата: отключена':'Плата: нет связи',BLE.manualOff?'':'bad');tabsUi();
+function bleOnDisc(){BLE.linked=false;BLE.chRx=null;EEG.onDisc();EMG.onDisc();g$('chips').innerHTML=chip0(BLE.manualOff?'Плата: отключена':'Плата: нет связи',BLE.manualOff?'':'bad');tabsUi();
  if(BLE.manualOff){connUi('Отключено. «Переподключиться» — к той же плате, без выбора из списка.',true);return}
  connUi(BLE.switching?'Плата переключает режим — переподключаюсь…':'Связь с платой потеряна — переподключаюсь сама. Можно нажать «Переподключиться».',true);
  clearTimeout(BLE.retryT);BLE.retryT=setTimeout(attempt,1500)}
@@ -381,32 +375,7 @@ setInterval(()=>{if(BLE.linked&&document.visibilityState==='visible'&&Date.now()
 function bleOnData(dv){BLE.lastRx=Date.now();BLE.inbuf+=bdec.decode(dv,{stream:true});let i;
  while((i=BLE.inbuf.indexOf('\n'))>=0){const l=BLE.inbuf.slice(0,i).replace(/\r$/,'');BLE.inbuf=BLE.inbuf.slice(i+1);if(l)route(l)}}
 // какая прошивка на плате: neuro_pilot шлёт H{...} и S с полем ch7; neuro_feedback шлёт S с fw "nf …"
-// Battery of the headset (not ESP32 or phone). Firmware reports -1 when unavailable.
-const HEADSET_BATTERY=(()=>{
- let state=null,received=0;
- function reset(){state=null;received=0;draw()}
- function update(s){state=s;received=Date.now();draw()}
- function draw(){
-  const value=g$('battery-percent'),note=g$('battery-note'),meter=g$('battery-meter'),card=g$('battery-card');
-  value.textContent='—';meter.hidden=true;card.style.borderColor='';value.style.color='';
-  if(!BLE.linked||!state){note.textContent=BLE.linked?'Жду данные о батарее BrainLink…':'Подключи плату, чтобы увидеть заряд гарнитуры.';return}
-  if(!state.link){note.textContent='Нет данных от BrainLink. Проверь, включена ли гарнитура.';return}
-  if(!Object.prototype.hasOwnProperty.call(state,'battery')){note.textContent='Обнови прошивку ESP32, чтобы видеть заряд BrainLink.';return}
-  const age=Number.isInteger(state.battery_age_ms)&&state.battery_age_ms>=0?state.battery_age_ms+Date.now()-received:-1;
-  if(age>300000){note.textContent='Данные о заряде устарели. Жду обновление от BrainLink.';return}
-  const pct=state.battery;
-  if(!Number.isInteger(pct)||pct<0||pct>100){note.textContent='BrainLink пока не передал уровень заряда.';return}
-  value.textContent=pct+'%';meter.hidden=false;meter.value=pct;
-  const color=pct<=10?'var(--bad)':pct<=20?'var(--orange)':'';
-  value.style.color=color;card.style.borderColor=color;meter.style.accentColor=color||'var(--green)';
-  note.textContent=pct<=10?'Заряд почти закончился — заряди BrainLink перед демкой.':pct<=20?'Низкий заряд — скоро потребуется зарядка.':'Уровень заряда получен от гарнитуры.';
- }
- setInterval(draw,1000);
- return {reset,update};
-})();
-
 function route(line){const k=line[0];
- if(k==='S'){try{HEADSET_BATTERY.update(JSON.parse(line.slice(1)))}catch(e){}}
  if(k==='L'){const t=line.slice(1);
   if(/прошивка combo|neuro_combo/.test(t)&&!BLE.modes){BLE.modes=true;tabsUi()}
   if(/^\[mode\]/.test(t)){BLE.modeMsg=t;if(BLE.switching&&/STOP|уже/.test(t)){BLE.switching=false;tabsUi()}}}
